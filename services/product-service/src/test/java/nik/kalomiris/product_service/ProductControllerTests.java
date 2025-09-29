@@ -92,4 +92,28 @@ class ProductControllerTests {
                 .andExpect(jsonPath("$.description").value("Single Product Description"))
                 .andExpect(jsonPath("$.price").value(50.00));
     }
+
+    // Test for updating a product
+    @Test
+    void shouldUpdateProduct() throws Exception {
+        Product product = new Product();
+        product.setName("Old Product");
+        product.setDescription("Old Description");
+        product.setPrice(30.00);
+        Product savedProduct = productRepository.save(product); // Save and get the saved entity with ID
+        Long productId = savedProduct.getId(); 
+        // Update product details
+        savedProduct.setName("Updated Product");
+        savedProduct.setDescription("Updated Description");
+        savedProduct.setPrice(35.00);
+
+        mockMvc.perform(post("/api/products/updateProduct")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(savedProduct)))
+                .andExpect(status().isOk()) // Expect HTTP 200 OK
+                .andExpect(jsonPath("$.id").value(productId))
+                .andExpect(jsonPath("$.name").value("Updated Product"))
+                .andExpect(jsonPath("$.description").value("Updated Description"))
+                .andExpect(jsonPath("$.price").value(35.00));
+    }
 }
