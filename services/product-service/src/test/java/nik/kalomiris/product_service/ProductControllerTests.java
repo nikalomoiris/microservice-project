@@ -73,4 +73,23 @@ class ProductControllerTests {
                 .andExpect(jsonPath("$[0].name").value("Product One"))
                 .andExpect(jsonPath("$[1].name").value("Product Two"));
     }
+
+    // Test for retrieving a single product by ID
+    @Test
+    void shouldGetProductById() throws Exception {
+        Product product = new Product();
+        product.setName("Single Product");
+        product.setDescription("Single Product Description");
+        product.setPrice(50.00);
+        Product savedProduct = productRepository.save(product); // Save and get the saved entity with ID
+        Long productId = savedProduct.getId();
+
+        mockMvc.perform(get("/api/products/{id}", productId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk()) // Expect HTTP 200 OK
+                .andExpect(jsonPath("$.id").value(productId))
+                .andExpect(jsonPath("$.name").value("Single Product"))
+                .andExpect(jsonPath("$.description").value("Single Product Description"))
+                .andExpect(jsonPath("$.price").value(50.00));
+    }
 }
