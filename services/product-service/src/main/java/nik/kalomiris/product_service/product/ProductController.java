@@ -4,53 +4,53 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
 @RequestMapping("api/products")
 public class ProductController {
 
-    private final ProductRepository productRepository;
+    private final ProductService productService;
 
-    ProductController(ProductRepository productRepository) {
-        this.productRepository = productRepository;
+    public ProductController(ProductService productService) {
+        this.productService = productService;
     }
 
     @PostMapping
     public ResponseEntity<Product> createProduct(@RequestBody Product product){
-        Product savedProduct = productRepository.save(product);
+        Product savedProduct = productService.createProduct(product);
         return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
     }
 
     @GetMapping
     public List<Product> getAllProducts(){
-
-        return productRepository.findAll();
-
+        return productService.getAllProducts();
     }
 
-    // Endpoint to get a product by its ID
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        return productRepository.findById(id)
+        return productService.getProductById(id)
                 .map(product -> new ResponseEntity<>(product, HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
-    
-    // Endpoint to update a product
-    @PostMapping("/updateProduct")
-    public ResponseEntity<Product> updateProduct(@RequestBody Product product) {
-        if (product.getId() == null || !productRepository.existsById(product.getId())) {
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product product) {
+        if (!productService.productExists(id)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        Product updatedProduct = productRepository.save(product);
+        product.setId(id); // Ensure the ID is set for the update
+        Product updatedProduct = productService.updateProduct(product);
         return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
     }
-    
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        if (!productService.productExists(id)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        productService.deleteProduct(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
 }

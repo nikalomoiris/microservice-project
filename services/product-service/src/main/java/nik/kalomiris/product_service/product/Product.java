@@ -16,8 +16,11 @@ public class Product {
     private String name;
     private String description;
     private double price;
+    private String sku;
 
     public Product() {
+        // Required by JPA: JPA uses reflection to instantiate entities,
+        // so a public or protected no-argument constructor is necessary.
     }
 
     public String getName() {
@@ -42,6 +45,14 @@ public class Product {
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
     }
 
     public Long getId() {
