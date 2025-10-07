@@ -5,36 +5,48 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, ProductMapper productMapper) {
         this.productRepository = productRepository;
+        this.productMapper = productMapper;
     }
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public List<ProductDTO> getAllProducts() {
+        // Stream.toList() returns an unmodifiable list (Java 16+)
+        return productRepository.findAll().stream()
+                .map(productMapper::toDto)
+                .toList();
     }
 
-    public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
+    public Optional<ProductDTO> getProductById(Long id) {
+        return productRepository.findById(id)
+                .map(productMapper::toDto);
     }
 
-    public Product createProduct(Product product) {
+    public ProductDTO createProduct(ProductDTO productDTO) {
+        Product product = productMapper.toEntity(productDTO);
+
         // --- Business Logic Example ---
         // Generate a unique SKU before saving the product.
         String sku = generateSku(product.getName());
         product.setSku(sku);
         // --- End of Business Logic ---
 
-        return productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+        return productMapper.toDto(savedProduct);
     }
 
-    public Product updateProduct(Product product) {
-        return productRepository.save(product);
+    public ProductDTO updateProduct(ProductDTO productDTO) {
+        Product product = productMapper.toEntity(productDTO);
+        Product updatedProduct = productRepository.save(product);
+        return productMapper.toDto(updatedProduct);
     }
 
     public void deleteProduct(Long id) {

@@ -1,8 +1,9 @@
 package nik.kalomiris.product_service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nik.kalomiris.product_service.product.Product;
 import nik.kalomiris.product_service.product.ProductController;
+import nik.kalomiris.product_service.product.ProductDTO;
+import nik.kalomiris.product_service.product.ProductMapper;
 import nik.kalomiris.product_service.product.ProductService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.Matchers.*;
 
-@WebMvcTest(ProductController.class) // We test only the controller, not the full context
+@WebMvcTest(ProductController.class)
 class ProductControllerTests {
 
     @Autowired
@@ -29,40 +30,42 @@ class ProductControllerTests {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean // Mock the service layer
+    @MockBean
     private ProductService productService;
+
+    @MockBean // Mock the mapper as well, since it's a dependency of the service
+    private ProductMapper productMapper;
 
     @Test
     void shouldCreateProduct() throws Exception {
-        Product product = new Product();
-        product.setName("Test Product");
-        product.setPrice(100.00);
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setName("Test Product");
+        productDTO.setPrice(100.00);
 
-        Product savedProduct = new Product();
-        savedProduct.setId(1L);
-        savedProduct.setName("Test Product");
-        savedProduct.setPrice(100.00);
-        savedProduct.setSku("TES-1234"); // Expect a SKU
+        ProductDTO savedProductDTO = new ProductDTO();
+        savedProductDTO.setId(1L);
+        savedProductDTO.setName("Test Product");
+        savedProductDTO.setPrice(100.00);
+        savedProductDTO.setSku("TES-1234");
 
-        // Define the behavior of the mocked service
-        when(productService.createProduct(any(Product.class))).thenReturn(savedProduct);
+        when(productService.createProduct(any(ProductDTO.class))).thenReturn(savedProductDTO);
 
         mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(product)))
+                .content(objectMapper.writeValueAsString(productDTO)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.name").value("Test Product"))
-                .andExpect(jsonPath("$.sku").value("TES-1234")); // Verify SKU is returned
+                .andExpect(jsonPath("$.sku").value("TES-1234"));
     }
 
     @Test
     void shouldGetAllProducts() throws Exception {
-        Product product1 = new Product();
+        ProductDTO product1 = new ProductDTO();
         product1.setId(1L);
         product1.setName("Product One");
 
-        Product product2 = new Product();
+        ProductDTO product2 = new ProductDTO();
         product2.setId(2L);
         product2.setName("Product Two");
 
@@ -77,7 +80,7 @@ class ProductControllerTests {
 
     @Test
     void shouldGetProductById() throws Exception {
-        Product product = new Product();
+        ProductDTO product = new ProductDTO();
         product.setId(1L);
         product.setName("Single Product");
 
@@ -100,17 +103,17 @@ class ProductControllerTests {
     @Test
     void shouldUpdateProduct() throws Exception {
         long productId = 1L;
-        Product updatedInfo = new Product();
+        ProductDTO updatedInfo = new ProductDTO();
         updatedInfo.setName("Updated Name");
 
-        Product updatedProduct = new Product();
+        ProductDTO updatedProduct = new ProductDTO();
         updatedProduct.setId(productId);
         updatedProduct.setName("Updated Name");
 
         when(productService.productExists(productId)).thenReturn(true);
-        when(productService.updateProduct(any(Product.class))).thenReturn(updatedProduct);
+        when(productService.updateProduct(any(ProductDTO.class))).thenReturn(updatedProduct);
 
-        mockMvc.perform(put("/api/products/{id}", productId) // Use PUT now
+        mockMvc.perform(put("/api/products/{id}", productId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updatedInfo)))
                 .andExpect(status().isOk())
@@ -122,7 +125,7 @@ class ProductControllerTests {
         long productId = 1L;
         when(productService.productExists(productId)).thenReturn(true);
 
-        mockMvc.perform(delete("/api/products/{id}", productId)) // Test DELETE
-                .andExpect(status().isNoContent()); // Expect 204 No Content
+        mockMvc.perform(delete("/api/products/{id}", productId))
+                .andExpect(status().isNoContent());
     }
 }
