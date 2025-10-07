@@ -1,33 +1,34 @@
 package nik.kalomiris.review_service.review;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.Mockito;
+// Removed Spring context dependencies for manual mocking
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Arrays;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.Matchers.*;
 
-@WebMvcTest(ReviewController.class)
-public class ReviewControllerTests {
+class ReviewControllerTests {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @MockBean
     private ReviewService reviewService;
+    private ReviewController reviewController;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @BeforeEach
+    void setUp() {
+        reviewService = Mockito.mock(ReviewService.class);
+        reviewController = new ReviewController(reviewService);
+        mockMvc = MockMvcBuilders.standaloneSetup(reviewController).build();
+    }
 
     @Test
     void shouldCreateReview() throws Exception {
@@ -37,7 +38,7 @@ public class ReviewControllerTests {
         review.setRating(5);
         review.setComment("Great product!");
 
-        when(reviewService.createReview(any(Review.class))).thenReturn(review);
+    Mockito.when(reviewService.createReview(Mockito.any(Review.class))).thenReturn(review);
 
         mockMvc.perform(post("/api/reviews")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -63,7 +64,7 @@ public class ReviewControllerTests {
         review2.setRating(4);
         review2.setComment("Good product.");
 
-        when(reviewService.getAllReviews()).thenReturn(Arrays.asList(review1, review2));
+    Mockito.when(reviewService.getAllReviews()).thenReturn(Arrays.asList(review1, review2));
 
         mockMvc.perform(get("/api/reviews"))
                 .andExpect(status().isOk())
@@ -80,7 +81,7 @@ public class ReviewControllerTests {
         review.setRating(5);
         review.setComment("Great product!");
 
-        when(reviewService.getReviewById(1L)).thenReturn(Optional.of(review));
+    Mockito.when(reviewService.getReviewById(1L)).thenReturn(Optional.of(review));
 
         mockMvc.perform(get("/api/reviews/1"))
                 .andExpect(status().isOk())
@@ -102,7 +103,7 @@ public class ReviewControllerTests {
         review2.setRating(4);
         review2.setComment("Good product.");
 
-        when(reviewService.getReviewsByProductId(1L)).thenReturn(Arrays.asList(review1, review2));
+    Mockito.when(reviewService.getReviewsByProductId(1L)).thenReturn(Arrays.asList(review1, review2));
 
         mockMvc.perform(get("/api/reviews/product/1"))
                 .andExpect(status().isOk())
