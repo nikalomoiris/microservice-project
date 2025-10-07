@@ -1,9 +1,8 @@
 package nik.kalomiris.product_service.product;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.util.List;
+import nik.kalomiris.product_service.category.Category;
 
 @Entity
 @Table(name = "products")
@@ -18,9 +17,25 @@ public class Product {
     private double price;
     private String sku;
 
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "product_categories",
+        joinColumns = @JoinColumn(name = "product_id"),
+        inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private List<Category> categories;
+
     public Product() {
         // Required by JPA: JPA uses reflection to instantiate entities,
         // so a public or protected no-argument constructor is necessary.
+    }
+    public List<Category> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(List<Category> categories) {
+        this.categories = categories;
     }
 
     public String getName() {

@@ -19,6 +19,9 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductDTO productDTO){
+        if (productDTO.getCategoryIds() == null || productDTO.getCategoryIds().isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         ProductDTO savedProduct = productService.createProduct(productDTO);
         return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
     }
@@ -39,6 +42,9 @@ public class ProductController {
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @RequestBody ProductDTO productDTO) {
         if (!productService.productExists(id)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        if (productDTO.getCategoryIds() == null || productDTO.getCategoryIds().isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         productDTO.setId(id); // Ensure the ID is set for the update
         ProductDTO updatedProduct = productService.updateProduct(productDTO);

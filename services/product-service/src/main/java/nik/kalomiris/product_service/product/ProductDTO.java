@@ -1,5 +1,8 @@
 package nik.kalomiris.product_service.product;
 
+
+import java.util.List;
+
 public class ProductDTO {
 
     private Long id;
@@ -7,16 +10,25 @@ public class ProductDTO {
     private String description;
     private double price;
     private String sku;
+    private List<Long> categoryIds;
 
     public ProductDTO() {
     }
 
-    public ProductDTO(Long id, String name, String description, double price, String sku) {
+    public ProductDTO(Long id, String name, String description, double price, String sku, List<Long> categoryIds) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.price = price;
         this.sku = sku;
+        this.categoryIds = categoryIds;
+    }
+    public List<Long> getCategoryIds() {
+        return categoryIds;
+    }
+
+    public void setCategoryIds(List<Long> categoryIds) {
+        this.categoryIds = categoryIds;
     }
 
     public Long getId() {
