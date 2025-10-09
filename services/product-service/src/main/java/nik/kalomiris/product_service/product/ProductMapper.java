@@ -26,7 +26,7 @@ public class ProductMapper {
         List<Long> categoryIds = product.getCategories() == null ? List.of() :
             product.getCategories().stream().map(Category::getId).toList();
         List<Long> imagesIds = product.getImages() == null ? List.of() :
-            product.getImages().stream().map(image -> image.getId()).toList();
+            product.getImages().stream().map(Image::getId).toList();
         return new ProductDTO(
                 product.getId(),
                 product.getName(),

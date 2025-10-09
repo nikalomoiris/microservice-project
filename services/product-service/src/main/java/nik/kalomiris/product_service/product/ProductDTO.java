@@ -3,7 +3,6 @@ package nik.kalomiris.product_service.product;
 
 import java.util.List;
 
-import nik.kalomiris.product_service.image.Image;
 
 public class ProductDTO {
 
