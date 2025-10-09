@@ -1,8 +1,11 @@
 package nik.kalomiris.product_service.product;
 
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 import nik.kalomiris.product_service.category.Category;
+import nik.kalomiris.product_service.image.Image;
 
 @Entity
 @Table(name = "products")
@@ -26,6 +29,9 @@ public class Product {
     )
     private List<Category> categories;
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Image> images = new ArrayList<>();
+
     public Product() {
         // Required by JPA: JPA uses reflection to instantiate entities,
         // so a public or protected no-argument constructor is necessary.
@@ -36,6 +42,19 @@ public class Product {
 
     public void setCategories(List<Category> categories) {
         this.categories = categories;
+    }
+
+    public List<Image> getImages() {
+        return images;
+    }
+
+    public void setImages(List<Image> images) {
+        this.images = images;
+    }
+
+     public void addImage(Image image) {
+        images.add(image);
+        image.setProduct(this);
     }
 
     public String getName() {

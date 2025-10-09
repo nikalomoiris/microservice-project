@@ -1,21 +1,40 @@
 package nik.kalomiris.product_service.product;
 
+
+import nik.kalomiris.product_service.image.Image;
+import nik.kalomiris.product_service.image.ImageRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final ImageRepository imageRepository;
 
-    public ProductService(ProductRepository productRepository, ProductMapper productMapper) {
+    public ProductService(ProductRepository productRepository, ProductMapper productMapper, ImageRepository imageRepository) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
+        this.imageRepository = imageRepository;
+    }
+    /**
+     * Associates a new image with a product by productId and imageUrl (path or URL).
+     */
+    @Transactional
+    public void addImageToProduct(Long productId, String imageUrl) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found: " + productId));
+        Image image = new Image();
+        image.setUrl(imageUrl);
+        image.setProduct(product);
+        product.getImages().add(image);
+        // Save image (cascade on product should also work, but explicit save is safe)
+        imageRepository.save(image);
     }
 
     public List<ProductDTO> getAllProducts() {

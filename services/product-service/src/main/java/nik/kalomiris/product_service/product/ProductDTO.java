@@ -3,6 +3,8 @@ package nik.kalomiris.product_service.product;
 
 import java.util.List;
 
+import nik.kalomiris.product_service.image.Image;
+
 public class ProductDTO {
 
     private Long id;
@@ -11,17 +13,21 @@ public class ProductDTO {
     private double price;
     private String sku;
     private List<Long> categoryIds;
+    private List<Long> imagesIds;
 
     public ProductDTO() {
     }
 
-    public ProductDTO(Long id, String name, String description, double price, String sku, List<Long> categoryIds) {
+    public ProductDTO(Long id, String name, 
+            String description, double price, 
+            String sku, List<Long> categoryIds, List<Long> imagesIds) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.price = price;
         this.sku = sku;
         this.categoryIds = categoryIds;
+        this.imagesIds = imagesIds;
     }
     public List<Long> getCategoryIds() {
         return categoryIds;
@@ -29,6 +35,14 @@ public class ProductDTO {
 
     public void setCategoryIds(List<Long> categoryIds) {
         this.categoryIds = categoryIds;
+    }
+
+    public List<Long> getImagesIds() {
+        return imagesIds;
+    }
+
+    public void setImagesIds(List<Long> imagesIds) {
+        this.imagesIds = imagesIds;
     }
 
     public Long getId() {
