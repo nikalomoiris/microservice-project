@@ -1,6 +1,9 @@
 package nik.kalomiris.product_service.product;
 
 
+import nik.kalomiris.product_service.config.RabbitMQConfig;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+
 import nik.kalomiris.product_service.image.Image;
 import nik.kalomiris.product_service.image.ImageRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,11 +19,13 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
     private final ImageRepository imageRepository;
+    private final RabbitTemplate rabbitTemplate;
 
-    public ProductService(ProductRepository productRepository, ProductMapper productMapper, ImageRepository imageRepository) {
+    public ProductService(ProductRepository productRepository, ProductMapper productMapper, ImageRepository imageRepository, RabbitTemplate rabbitTemplate) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.imageRepository = imageRepository;
+        this.rabbitTemplate = rabbitTemplate;
     }
     /**
      * Associates a new image with a product by productId and imageUrl (path or URL).
@@ -59,6 +64,10 @@ public class ProductService {
         // --- End of Business Logic ---
 
         Product savedProduct = productRepository.save(product);
+
+        // Send a message to RabbitMQ
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_PRODUCT_CREATED, savedProduct.getSku());
+
         return productMapper.toDto(savedProduct);
     }
 
