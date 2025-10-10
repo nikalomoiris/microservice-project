@@ -21,7 +21,8 @@ public class ProductService {
     private final ImageRepository imageRepository;
     private final RabbitTemplate rabbitTemplate;
 
-    public ProductService(ProductRepository productRepository, ProductMapper productMapper, ImageRepository imageRepository, RabbitTemplate rabbitTemplate) {
+    public ProductService(ProductRepository productRepository, ProductMapper productMapper, 
+            ImageRepository imageRepository, RabbitTemplate rabbitTemplate) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.imageRepository = imageRepository;
@@ -57,11 +58,9 @@ public class ProductService {
     public ProductDTO createProduct(ProductDTO productDTO) {
         Product product = productMapper.toEntity(productDTO);
 
-        // --- Business Logic Example ---
         // Generate a unique SKU before saving the product.
         String sku = generateSku(product.getName());
         product.setSku(sku);
-        // --- End of Business Logic ---
 
         Product savedProduct = productRepository.save(product);
 
