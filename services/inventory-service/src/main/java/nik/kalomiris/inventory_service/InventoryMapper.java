@@ -13,6 +13,7 @@ public class InventoryMapper {
         return new InventoryDTO(
             inventory.getSku(),
             inventory.getQuantity(),
+            inventory.getReservedQuantity(),
             inventory.getQuantity() > 0
         );
     }
@@ -23,7 +24,8 @@ public class InventoryMapper {
         }
         return new Inventory(
             dto.getSku(),
-            dto.getQuantity()
+            dto.getQuantity(),
+            dto.getReservedQuantity()
         );
     }
 }
