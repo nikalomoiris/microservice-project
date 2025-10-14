@@ -111,4 +111,34 @@ class ReviewControllerTests {
                 .andExpect(jsonPath("$[0].productId").value(1L))
                 .andExpect(jsonPath("$[1].productId").value(1L));
     }
+
+    @Test
+    void shouldAddUpvote() throws Exception {
+        Long reviewId = 1L;
+        Review review = new Review();
+        review.setId(reviewId);
+        review.setUpvotes(0);
+
+        Mockito.when(reviewService.addUpVote(reviewId)).thenReturn(review);
+
+        mockMvc.perform(post("/api/reviews/{id}/upvote", reviewId))
+                .andExpect(status().isOk());
+
+        Mockito.verify(reviewService, Mockito.times(1)).addUpVote(reviewId);
+    }
+
+    @Test
+    void shouldAddDownvote() throws Exception {
+        Long reviewId = 1L;
+        Review review = new Review();
+        review.setId(reviewId);
+        review.setDownvotes(0);
+
+        Mockito.when(reviewService.addDownVote(reviewId)).thenReturn(review);
+
+        mockMvc.perform(post("/api/reviews/{id}/downvote", reviewId))
+                .andExpect(status().isOk());
+
+        Mockito.verify(reviewService, Mockito.times(1)).addDownVote(reviewId);
+    }
 }

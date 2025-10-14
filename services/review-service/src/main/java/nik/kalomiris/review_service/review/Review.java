@@ -16,6 +16,8 @@ public class Review {
     private Long productId;
     private int rating;
     private String comment;
+    private Integer upvotes = 0;
+    private Integer downvotes = 0;
 
     public Review() {
     }
@@ -50,5 +52,21 @@ public class Review {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+
+    public Integer getUpvotes() {
+        return upvotes;
+    }
+
+    public void setUpvotes(Integer upvotes) {
+        this.upvotes = upvotes;
+    }
+
+    public Integer getDownvotes() {
+        return downvotes;
+    }
+
+    public void setDownvotes(Integer downvotes) {
+        this.downvotes = downvotes;
     }
 }
