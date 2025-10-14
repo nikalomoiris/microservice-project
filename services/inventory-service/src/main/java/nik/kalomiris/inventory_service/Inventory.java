@@ -16,13 +16,15 @@ public class Inventory {
 
     private String sku;
     private Integer quantity;
+    private Integer reservedQuantity;
 
     public Inventory() {
     }
 
-    public Inventory(String sku, Integer quantity) {
+    public Inventory(String sku, Integer quantity, Integer reservedQuantity) {
         this.sku = sku;
         this.quantity = quantity;
+        this.reservedQuantity = reservedQuantity;
     }
 
     public Long getId() {
@@ -47,5 +49,13 @@ public class Inventory {
 
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
+    }
+
+    public Integer getReservedQuantity() {
+        return reservedQuantity;
+    }
+
+    public void setReservedQuantity(Integer reservedQuantity) {
+        this.reservedQuantity = reservedQuantity;
     }
 }

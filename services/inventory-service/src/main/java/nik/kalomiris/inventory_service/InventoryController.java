@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @RestController
 @RequestMapping("/api/inventory")
@@ -25,4 +28,18 @@ public class InventoryController {
         return inventoryOpt.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/{productId}/reserver")
+    public ResponseEntity<Void> reserveStock(@PathVariable Long productId, @RequestBody Integer quantityToReserve) {
+        inventoryService.reserveStock(productId, quantityToReserve);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{productId}/release")
+    public ResponseEntity<Void> releaseStock(@PathVariable Long productId, @RequestBody Integer quantityToRelease) {
+        inventoryService.releaseStock(productId, quantityToRelease);
+        return ResponseEntity.ok().build();
+    }
+    
+    
 }

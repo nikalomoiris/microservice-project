@@ -10,22 +10,42 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-    public static final String EXCHANGE_NAME = "product-exchange";
-    public static final String QUEUE_NAME = "inventory-service-queue";
+    public static final String PRODUCT_EXCHANGE_NAME = "product-exchange";
+    public static final String PRODUCT_CREATED_QUEUE_NAME = "inventory-service-queue";
     public static final String ROUTING_KEY_PRODUCT_CREATED = "product.created";
+
+    public static final String ORDER_EXCHANGE_NAME = "order-exchange";
+    public static final String ORDER_CREATED_QUEUE_NAME = "order.created.inventory.queue";
+    public static final String ROUTING_KEY_ORDER_CREATED = "order.created";
 
     @Bean
     public TopicExchange productExchange() {
-        return new TopicExchange(EXCHANGE_NAME);
+        return new TopicExchange(PRODUCT_EXCHANGE_NAME);
     }
 
     @Bean
     public Queue inventoryQueue() {
-        return new Queue(QUEUE_NAME, true);
+        return new Queue(PRODUCT_CREATED_QUEUE_NAME, true);
     }
 
     @Bean
-    public Binding binding(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY_PRODUCT_CREATED);
+    public Binding productBinding(Queue inventoryQueue, TopicExchange productExchange) {
+        return BindingBuilder.bind(inventoryQueue).to(productExchange).with(ROUTING_KEY_PRODUCT_CREATED);
+    }
+
+    @Bean
+    public TopicExchange orderExchange() {
+        return new TopicExchange(ORDER_EXCHANGE_NAME);
+    }
+
+    @Bean
+
+    public Queue orderCreatedInventoryQueue() {
+        return new Queue(ORDER_CREATED_QUEUE_NAME, true);
+    }
+
+    @Bean
+    public Binding orderBinding(Queue orderCreatedInventoryQueue, TopicExchange orderExchange) {
+        return BindingBuilder.bind(orderCreatedInventoryQueue).to(orderExchange).with(ROUTING_KEY_ORDER_CREATED);
     }
 }

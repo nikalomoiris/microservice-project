@@ -1,59 +1,104 @@
-
 package nik.kalomiris.inventory_service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import nik.kalomiris.inventory_service.exceptions.InsufficientStockException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@Transactional
 public class InventoryServiceTests {
 
-    @Mock
-    private InventoryRepository inventoryRepository;
-
-    @Mock
-    private InventoryMapper inventoryMapper;
-
-    @InjectMocks
+    @Autowired
     private InventoryService inventoryService;
 
-    @Test
-    void getInventoryBySku_shouldReturnDto_whenInventoryExists() {
-        // Arrange
-        String sku = "TEST-SKU";
-        Inventory inventory = new Inventory(sku, 10);
-        InventoryDTO inventoryDTO = new InventoryDTO(sku, 10, true);
+    @Autowired
+    private InventoryRepository inventoryRepository;
 
-        when(inventoryRepository.findBySku(sku)).thenReturn(Optional.of(inventory));
-        when(inventoryMapper.toDto(inventory)).thenReturn(inventoryDTO);
+    private Inventory inventory;
 
-        // Act
-        Optional<InventoryDTO> result = inventoryService.getInventoryBySku(sku);
-
-        // Assert
-        assertThat(result).isPresent();
-        assertThat(result.get().getSku()).isEqualTo(sku);
-        assertThat(result.get().getQuantity()).isEqualTo(10);
-        assertThat(result.get().isInStock()).isTrue();
+    @BeforeEach
+    void setUp() {
+        inventoryRepository.deleteAll();
+        inventory = new Inventory("TEST-SKU", 100, 10);
+        inventory = inventoryRepository.save(inventory);
     }
 
     @Test
-    void getInventoryBySku_shouldReturnEmpty_whenInventoryDoesNotExist() {
-        // Arrange
-        String sku = "NON-EXISTENT-SKU";
-        when(inventoryRepository.findBySku(sku)).thenReturn(Optional.empty());
-
+    void reserveStock_shouldIncreaseReservedQuantity_whenStockIsAvailable() {
         // Act
-        Optional<InventoryDTO> result = inventoryService.getInventoryBySku(sku);
+        inventoryService.reserveStock(inventory.getId(), 20);
 
         // Assert
-        assertThat(result).isNotPresent();
+        Inventory updatedInventory = inventoryRepository.findById(inventory.getId()).get();
+        assertThat(updatedInventory.getReservedQuantity()).isEqualTo(30);
+        assertThat(updatedInventory.getQuantity()).isEqualTo(100);
+    }
+
+    @Test
+    void reserveStock_shouldThrowException_whenStockIsNotAvailable() {
+        // Assert
+        assertThrows(InsufficientStockException.class, () -> {
+            // Act
+            inventoryService.reserveStock(inventory.getId(), 100); // Available is 90
+        });
+    }
+
+    @Test
+    void releaseStock_shouldDecreaseReservedQuantity() {
+        // Act
+        inventoryService.releaseStock(inventory.getId(), 5);
+
+        // Assert
+        Inventory updatedInventory = inventoryRepository.findById(inventory.getId()).get();
+        assertThat(updatedInventory.getReservedQuantity()).isEqualTo(5);
+    }
+
+    @Test
+    void releaseStock_shouldThrowException_whenReleasingMoreThanReserved() {
+        // Assert
+        assertThrows(InsufficientStockException.class, () -> {
+            // Act
+            inventoryService.releaseStock(inventory.getId(), 15); // Only 10 are reserved
+        });
+    }
+
+    @Test
+    void commitStock_shouldDecreaseQuantityAndReservedQuantity() {
+        // Act
+        inventoryService.commitStock(inventory.getId(), 5);
+
+        // Assert
+        Inventory updatedInventory = inventoryRepository.findById(inventory.getId()).get();
+        assertThat(updatedInventory.getQuantity()).isEqualTo(95);
+        assertThat(updatedInventory.getReservedQuantity()).isEqualTo(5);
+    }
+
+    @Test
+    void commitStock_shouldThrowException_whenCommittingMoreThanReserved() {
+        // Assert
+        assertThrows(InsufficientStockException.class, () -> {
+            // Act
+            inventoryService.commitStock(inventory.getId(), 15); // Only 10 are reserved
+        });
+    }
+
+    @Test
+    void getInventoryBySku_shouldReturnDto_whenInventoryExists() {
+        // Act
+        var result = inventoryService.getInventoryBySku("TEST-SKU");
+
+        // Assert
+        assertThat(result).isPresent();
+        assertThat(result.get().getSku()).isEqualTo("TEST-SKU");
+        assertThat(result.get().getQuantity()).isEqualTo(100);
+        assertThat(result.get().getReservedQuantity()).isEqualTo(10);
+        assertThat(result.get().isInStock()).isTrue();
     }
 }
