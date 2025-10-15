@@ -98,13 +98,67 @@ class ProductControllerTests {
         product2.setId(2L);
         product2.setName("Product Two");
 
-        when(productService.getAllProducts()).thenReturn(Arrays.asList(product1, product2));
+        when(productService.getAllProducts(null, null, "asc")).thenReturn(Arrays.asList(product1, product2));
 
         mockMvc.perform(get("/api/products"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].name").value("Product One"))
                 .andExpect(jsonPath("$[1].name").value("Product Two"));
+    }
+
+    @Test
+    void shouldGetAllProductsFilteredByCategory() throws Exception {
+        ProductDTO product1 = new ProductDTO();
+        product1.setId(1L);
+        product1.setName("Book of Tests");
+
+        when(productService.getAllProducts("Books", null, "asc")).thenReturn(Arrays.asList(product1));
+
+        mockMvc.perform(get("/api/products?categoryName=Books"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].name").value("Book of Tests"));
+    }
+
+    @Test
+    void shouldGetAllProductsSortedByPriceDescending() throws Exception {
+        ProductDTO product1 = new ProductDTO();
+        product1.setId(1L);
+        product1.setName("Expensive Product");
+        product1.setPrice(200.00);
+
+        ProductDTO product2 = new ProductDTO();
+        product2.setId(2L);
+        product2.setName("Cheap Product");
+        product2.setPrice(100.00);
+
+        when(productService.getAllProducts(null, "price", "desc")).thenReturn(Arrays.asList(product1, product2));
+
+        mockMvc.perform(get("/api/products?sortBy=price&sortDir=desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].name").value("Expensive Product"))
+                .andExpect(jsonPath("$[1].name").value("Cheap Product"));
+    }
+
+    @Test
+    void shouldGetAllProductsFilteredByCategoryAndSortedByName() throws Exception {
+        ProductDTO product1 = new ProductDTO();
+        product1.setId(1L);
+        product1.setName("A Test Book");
+
+        ProductDTO product2 = new ProductDTO();
+        product2.setId(2L);
+        product2.setName("B Test Book");
+
+        when(productService.getAllProducts("Books", "name", "asc")).thenReturn(Arrays.asList(product1, product2));
+
+        mockMvc.perform(get("/api/products?categoryName=Books&sortBy=name&sortDir=asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].name").value("A Test Book"))
+                .andExpect(jsonPath("$[1].name").value("B Test Book"));
     }
 
     @Test

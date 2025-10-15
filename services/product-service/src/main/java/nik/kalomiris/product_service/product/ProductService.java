@@ -3,6 +3,7 @@ package nik.kalomiris.product_service.product;
 
 import nik.kalomiris.product_service.config.RabbitMQConfig;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.data.domain.Sort;
 
 import nik.kalomiris.product_service.image.Image;
 import nik.kalomiris.product_service.image.ImageRepository;
@@ -44,8 +45,22 @@ public class ProductService {
     }
 
     public List<ProductDTO> getAllProducts() {
-        // Stream.toList() returns an unmodifiable list (Java 16+)
-        return productRepository.findAll().stream()
+        return getAllProducts(null, null, "asc");
+    }
+
+    public List<ProductDTO> getAllProducts(String categoryName, String sortBy, String sortDir) {
+        Sort sort = (sortBy != null && !sortBy.isEmpty())
+                ? Sort.by(Sort.Direction.fromString(sortDir), sortBy)
+                : Sort.unsorted();
+
+        List<Product> products;
+        if (categoryName != null && !categoryName.isEmpty()) {
+            products = productRepository.findByCategoryName(categoryName,sort);
+        } else {
+            products = productRepository.findAll(sort);
+        }
+
+        return products.stream()
                 .map(productMapper::toDto)
                 .toList();
     }
