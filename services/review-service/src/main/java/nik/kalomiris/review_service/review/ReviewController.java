@@ -5,6 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -37,5 +40,17 @@ public class ReviewController {
     @GetMapping("/product/{productId}")
     public List<Review> getReviewsByProductId(@PathVariable Long productId) {
         return reviewService.getReviewsByProductId(productId);
+    }
+
+    @PostMapping("/{id}/upvote")
+    public ResponseEntity<Review> saveUpVote(@PathVariable Long id) {
+        Review updatedReview = reviewService.addUpVote(id);
+        return new ResponseEntity<>(updatedReview, HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/downvote")
+    public ResponseEntity<Review> saveDownVote(@PathVariable Long id) {
+        Review updatedReview = reviewService.addDownVote(id);
+        return new ResponseEntity<>(updatedReview, HttpStatus.OK);
     }
 }

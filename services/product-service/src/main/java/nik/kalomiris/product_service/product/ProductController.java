@@ -36,8 +36,11 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<ProductDTO> getAllProducts(){
-        return productService.getAllProducts();
+    public List<ProductDTO> getAllProducts(
+        @RequestParam(required = false) String categoryName,
+        @RequestParam(required = false) String sortBy,
+        @RequestParam(required = false, defaultValue = "asc") String sortDir) {
+        return productService.getAllProducts(categoryName, sortBy, sortDir);
     }
 
     @GetMapping("/{id}")
