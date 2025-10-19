@@ -1,27 +1,28 @@
 package nik.kalomiris.order_service.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.util.List;
 
 @Entity
 @Table(name = "orders")
 public class Order {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String orderNumber;
+
     @OneToMany(cascade = CascadeType.ALL)
     private List<OrderLineItem> orderLineItems;
 
-    public Order() {
-    }
+    public Order() {}
 
-    public Order(Long id, String orderNumber, List<OrderLineItem> orderLineItems) {
+    public Order(
+        Long id,
+        String orderNumber,
+        List<OrderLineItem> orderLineItems
+    ) {
         this.id = id;
         this.orderNumber = orderNumber;
         this.orderLineItems = orderLineItems;

@@ -1,5 +1,11 @@
 package nik.kalomiris.product_service;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Arrays;
 import nik.kalomiris.product_service.category.Category;
 import nik.kalomiris.product_service.category.CategoryRepository;
 import nik.kalomiris.product_service.product.Product;
@@ -12,14 +18,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.Arrays;
-import java.util.HashSet;
-
-import static org.hamcrest.Matchers.hasSize;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -78,36 +76,43 @@ public class ProductControllerIntegrationTests {
 
     @Test
     void shouldGetAllProducts() throws Exception {
-        mockMvc.perform(get("/api/products"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(3)));
+        mockMvc
+            .perform(get("/api/products"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(3)));
     }
 
     @Test
     void shouldGetAllProductsFilteredByCategory() throws Exception {
-        mockMvc.perform(get("/api/products?categoryName=Books"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name").value("The Lord of the Rings"))
-                .andExpect(jsonPath("$[1].name").value("A Game of Thrones"));
+        mockMvc
+            .perform(get("/api/products?categoryName=Books"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].name").value("The Lord of the Rings"))
+            .andExpect(jsonPath("$[1].name").value("A Game of Thrones"));
     }
 
     @Test
     void shouldGetAllProductsSortedByPriceDescending() throws Exception {
-        mockMvc.perform(get("/api/products?sortBy=price&sortDir=desc"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(3)))
-                .andExpect(jsonPath("$[0].name").value("Laptop"))
-                .andExpect(jsonPath("$[1].name").value("The Lord of the Rings"))
-                .andExpect(jsonPath("$[2].name").value("A Game of Thrones"));
+        mockMvc
+            .perform(get("/api/products?sortBy=price&sortDir=desc"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(3)))
+            .andExpect(jsonPath("$[0].name").value("Laptop"))
+            .andExpect(jsonPath("$[1].name").value("The Lord of the Rings"))
+            .andExpect(jsonPath("$[2].name").value("A Game of Thrones"));
     }
 
     @Test
-    void shouldGetAllProductsFilteredByCategoryAndSortedByName() throws Exception {
-        mockMvc.perform(get("/api/products?categoryName=Books&sortBy=name&sortDir=asc"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name").value("A Game of Thrones"))
-                .andExpect(jsonPath("$[1].name").value("The Lord of the Rings"));
+    void shouldGetAllProductsFilteredByCategoryAndSortedByName()
+        throws Exception {
+        mockMvc
+            .perform(
+                get("/api/products?categoryName=Books&sortBy=name&sortDir=asc")
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].name").value("A Game of Thrones"))
+            .andExpect(jsonPath("$[1].name").value("The Lord of the Rings"));
     }
 }
