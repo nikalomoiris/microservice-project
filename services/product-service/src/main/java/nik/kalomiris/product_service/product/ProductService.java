@@ -2,6 +2,7 @@ package nik.kalomiris.product_service.product;
 
 
 import nik.kalomiris.product_service.config.RabbitMQConfig;
+import nik.kalomiris.logging_client.LogPublisher;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Sort;
 
@@ -21,13 +22,15 @@ public class ProductService {
     private final ProductMapper productMapper;
     private final ImageRepository imageRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final LogPublisher logPublisher;
 
     public ProductService(ProductRepository productRepository, ProductMapper productMapper, 
-            ImageRepository imageRepository, RabbitTemplate rabbitTemplate) {
+            ImageRepository imageRepository, RabbitTemplate rabbitTemplate, LogPublisher logPublisher) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.imageRepository = imageRepository;
         this.rabbitTemplate = rabbitTemplate;
+        this.logPublisher = logPublisher;
     }
     /**
      * Associates a new image with a product by productId and imageUrl (path or URL).
@@ -42,6 +45,12 @@ public class ProductService {
         product.getImages().add(image);
         // Save image (cascade on product should also work, but explicit save is safe)
         imageRepository.save(image);
+        // Publish a log event about the image addition. Ignore logging failures.
+        try {
+            logPublisher.publish("Image added to product " + productId + " url=" + imageUrl);
+        } catch (Exception e) {
+            // ignore logging failures
+        }
     }
 
     public List<ProductDTO> getAllProducts() {
@@ -58,6 +67,12 @@ public class ProductService {
             products = productRepository.findByCategoryName(categoryName,sort);
         } else {
             products = productRepository.findAll(sort);
+        }
+
+        try {
+            logPublisher.publish("Products retrieved");
+        } catch (Exception e) {
+            // ignore logging failures
         }
 
         return products.stream()
@@ -82,17 +97,37 @@ public class ProductService {
         // Send a message to RabbitMQ
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_PRODUCT_CREATED, savedProduct.getSku());
 
+        // Publish a log event about the created product. Ignore logging failures.
+        try {
+            logPublisher.publish("Product created: sku=" + savedProduct.getSku() + " id=" + savedProduct.getId());
+        } catch (Exception e) {
+            // ignore logging failures
+        }
+
         return productMapper.toDto(savedProduct);
     }
 
     public ProductDTO updateProduct(ProductDTO productDTO) {
         Product product = productMapper.toEntity(productDTO);
         Product updatedProduct = productRepository.save(product);
+        try {
+            logPublisher.publish("Product updated: id=" + updatedProduct.getId());
+        } catch (Exception e) {
+            // ignore logging failures
+        }
         return productMapper.toDto(updatedProduct);
     }
 
     public void deleteProduct(Long id) {
+        // Perform deletion; allow exceptions to propagate to caller.
         productRepository.deleteById(id);
+
+        // Publish deletion log; ignore logging failures so deletion result is not affected.
+        try {
+            logPublisher.publish("Product deleted: id=" + id);
+        } catch (Exception e) {
+            // ignore logging failures
+        }
     }
 
     public boolean productExists(Long id) {

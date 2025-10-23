@@ -1,27 +1,28 @@
 package nik.kalomiris.order_service.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "order_line_items")
 public class OrderLineItem {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String sku;
     private BigDecimal price;
     private Integer quantity;
 
-    public OrderLineItem() {
-    }
+    public OrderLineItem() {}
 
-    public OrderLineItem(Long id, String sku, BigDecimal price, Integer quantity) {
+    public OrderLineItem(
+        Long id,
+        String sku,
+        BigDecimal price,
+        Integer quantity
+    ) {
         this.id = id;
         this.sku = sku;
         this.price = price;
