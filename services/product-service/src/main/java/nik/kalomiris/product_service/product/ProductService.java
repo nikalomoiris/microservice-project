@@ -3,6 +3,7 @@ package nik.kalomiris.product_service.product;
 
 import nik.kalomiris.product_service.config.RabbitMQConfig;
 import nik.kalomiris.logging_client.LogPublisher;
+import nik.kalomiris.logging_client.LogMessage;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Sort;
 
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -47,7 +49,14 @@ public class ProductService {
         imageRepository.save(image);
         // Publish a log event about the image addition. Ignore logging failures.
         try {
-            logPublisher.publish("Image added to product " + productId + " url=" + imageUrl);
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Image added to product")
+                    .level("INFO")
+                    .service("product-service")
+                    .logger("nik.kalomiris.product_service.product.ProductService")
+                    .metadata(Map.of("productId", productId.toString(), "imageUrl", imageUrl))
+                    .build();
+            logPublisher.publish(logMessage);
         } catch (Exception e) {
             // ignore logging failures
         }
@@ -70,7 +79,14 @@ public class ProductService {
         }
 
         try {
-            logPublisher.publish("Products retrieved");
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Products retrieved")
+                    .level("INFO")
+                    .service("product-service")
+                    .logger("nik.kalomiris.product_service.product.ProductService")
+                    .metadata(categoryName != null ? Map.of("categoryName", categoryName) : null)
+                    .build();
+            logPublisher.publish(logMessage);
         } catch (Exception e) {
             // ignore logging failures
         }
@@ -99,7 +115,14 @@ public class ProductService {
 
         // Publish a log event about the created product. Ignore logging failures.
         try {
-            logPublisher.publish("Product created: sku=" + savedProduct.getSku() + " id=" + savedProduct.getId());
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Product created")
+                    .level("INFO")
+                    .service("product-service")
+                    .logger("nik.kalomiris.product_service.product.ProductService")
+                    .metadata(Map.of("sku", savedProduct.getSku(), "productId", savedProduct.getId().toString()))
+                    .build();
+            logPublisher.publish(logMessage);
         } catch (Exception e) {
             // ignore logging failures
         }
@@ -111,7 +134,14 @@ public class ProductService {
         Product product = productMapper.toEntity(productDTO);
         Product updatedProduct = productRepository.save(product);
         try {
-            logPublisher.publish("Product updated: id=" + updatedProduct.getId());
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Product updated")
+                    .level("INFO")
+                    .service("product-service")
+                    .logger("nik.kalomiris.product_service.product.ProductService")
+                    .metadata(Map.of("productId", updatedProduct.getId().toString()))
+                    .build();
+            logPublisher.publish(logMessage);
         } catch (Exception e) {
             // ignore logging failures
         }
@@ -124,7 +154,14 @@ public class ProductService {
 
         // Publish deletion log; ignore logging failures so deletion result is not affected.
         try {
-            logPublisher.publish("Product deleted: id=" + id);
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Product deleted")
+                    .level("INFO")
+                    .service("product-service")
+                    .logger("nik.kalomiris.product_service.product.ProductService")
+                    .metadata(Map.of("productId", id.toString()))
+                    .build();
+            logPublisher.publish(logMessage);
         } catch (Exception e) {
             // ignore logging failures
         }
