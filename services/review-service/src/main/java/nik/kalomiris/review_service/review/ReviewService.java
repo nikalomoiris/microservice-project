@@ -93,7 +93,7 @@ public class ReviewService {
                     .level("INFO")
                     .service("review-service")
                     .logger("nik.kalomiris.review_service.review.ReviewService")
-                    .metadata(Map.of("reviewId", reviewId.toString()))
+                    .metadata(Map.of("reviewId", reviewId.toString(), "productId", review.getProductId().toString()))
                     .build();
             logPublisher.publish(logMessage);
         } catch (Exception e) {
