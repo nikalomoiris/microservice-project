@@ -1,21 +1,42 @@
 package nik.kalomiris.review_service.review;
 
+import nik.kalomiris.logging_client.LogPublisher;
+import nik.kalomiris.logging_client.LogMessage;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
+    private final LogPublisher logPublisher;
 
-    public ReviewService(ReviewRepository reviewRepository) {
+    public ReviewService(ReviewRepository reviewRepository, LogPublisher logPublisher) {
         this.reviewRepository = reviewRepository;
+        this.logPublisher = logPublisher;
     }
 
     public Review createReview(Review review) {
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+
+        // Publish a log event about the review creation. Ignore logging failures.
+        try {
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Review created")
+                    .level("INFO")
+                    .service("review-service")
+                    .logger("nik.kalomiris.review_service.review.ReviewService")
+                    .metadata(Map.of("reviewId", savedReview.getId().toString(), "productId", savedReview.getProductId().toString()))
+                    .build();
+            logPublisher.publish(logMessage);
+        } catch (Exception e) {
+            // ignore logging failures
+        }
+
+        return savedReview;
     }
 
     public List<Review> getAllReviews() {
@@ -37,7 +58,23 @@ public class ReviewService {
             review.setUpvotes(0);
         }
         review.setUpvotes(review.getUpvotes() + 1);
-        return reviewRepository.save(review);
+        Review updatedReview = reviewRepository.save(review);
+
+        // Publish a log event about the upvote. Ignore logging failures.
+        try {
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Review upvoted")
+                    .level("INFO")
+                    .service("review-service")
+                    .logger("nik.kalomiris.review_service.review.ReviewService")
+                    .metadata(Map.of("reviewId", reviewId.toString(), "productId", review.getProductId().toString()))
+                    .build();
+            logPublisher.publish(logMessage);
+        } catch (Exception e) {
+            // ignore logging failures
+        }
+
+        return updatedReview;
     }
 
     public Review addDownVote(Long reviewId) {
@@ -47,6 +84,22 @@ public class ReviewService {
             review.setDownvotes(0);
         }
         review.setDownvotes(review.getDownvotes() + 1);
-        return reviewRepository.save(review);
+        Review updatedReview = reviewRepository.save(review);
+
+        // Publish a log event about the downvote. Ignore logging failures.
+        try {
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Review downvoted")
+                    .level("INFO")
+                    .service("review-service")
+                    .logger("nik.kalomiris.review_service.review.ReviewService")
+                    .metadata(Map.of("reviewId", reviewId.toString(), "productId", review.getProductId().toString()))
+                    .build();
+            logPublisher.publish(logMessage);
+        } catch (Exception e) {
+            // ignore logging failures
+        }
+
+        return updatedReview;
     }
 }
