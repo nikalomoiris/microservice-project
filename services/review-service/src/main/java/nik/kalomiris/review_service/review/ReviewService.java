@@ -11,6 +11,11 @@ import java.util.Optional;
 @Service
 public class ReviewService {
 
+    private static final String SERVICE_NAME = "review-service";
+    private static final String REVIEW_SERVICE_LOGGER = "nik.kalomiris.review_service.review.ReviewService";
+    private static final String REVIEW_ID="reviewId";
+    private static final String PRODUCT_ID="productId";
+
     private final ReviewRepository reviewRepository;
     private final LogPublisher logPublisher;
 
@@ -27,9 +32,9 @@ public class ReviewService {
             LogMessage logMessage = new LogMessage.Builder()
                     .message("Review created")
                     .level("INFO")
-                    .service("review-service")
-                    .logger("nik.kalomiris.review_service.review.ReviewService")
-                    .metadata(Map.of("reviewId", savedReview.getId().toString(), "productId", savedReview.getProductId().toString()))
+                    .service(SERVICE_NAME)
+                    .logger(REVIEW_SERVICE_LOGGER)
+                    .metadata(Map.of(REVIEW_ID, savedReview.getId().toString(), PRODUCT_ID, savedReview.getProductId().toString()))
                     .build();
             logPublisher.publish(logMessage);
         } catch (Exception e) {
@@ -65,9 +70,9 @@ public class ReviewService {
             LogMessage logMessage = new LogMessage.Builder()
                     .message("Review upvoted")
                     .level("INFO")
-                    .service("review-service")
-                    .logger("nik.kalomiris.review_service.review.ReviewService")
-                    .metadata(Map.of("reviewId", reviewId.toString(), "productId", review.getProductId().toString()))
+                    .service(SERVICE_NAME)
+                    .logger(REVIEW_SERVICE_LOGGER)
+                    .metadata(Map.of(REVIEW_ID, reviewId.toString(), PRODUCT_ID, review.getProductId().toString()))
                     .build();
             logPublisher.publish(logMessage);
         } catch (Exception e) {
@@ -91,9 +96,9 @@ public class ReviewService {
             LogMessage logMessage = new LogMessage.Builder()
                     .message("Review downvoted")
                     .level("INFO")
-                    .service("review-service")
-                    .logger("nik.kalomiris.review_service.review.ReviewService")
-                    .metadata(Map.of("reviewId", reviewId.toString(), "productId", review.getProductId().toString()))
+                    .service(SERVICE_NAME)
+                    .logger(REVIEW_SERVICE_LOGGER)
+                    .metadata(Map.of(REVIEW_ID, reviewId.toString(), PRODUCT_ID, review.getProductId().toString()))
                     .build();
             logPublisher.publish(logMessage);
         } catch (Exception e) {
