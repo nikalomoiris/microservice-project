@@ -16,6 +16,12 @@ public class Order {
     @OneToMany(cascade = CascadeType.ALL)
     private List<OrderLineItem> orderLineItems;
 
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status = OrderStatus.CREATED;
+
+    @Version
+    private Long version;
+
     public Order() {}
 
     public Order(
@@ -50,5 +56,21 @@ public class Order {
 
     public void setOrderLineItems(List<OrderLineItem> orderLineItems) {
         this.orderLineItems = orderLineItems;
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }

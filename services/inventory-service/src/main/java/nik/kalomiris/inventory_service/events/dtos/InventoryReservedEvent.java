@@ -1,18 +1,17 @@
-package nik.kalomiris.order_service.dto;
+package nik.kalomiris.inventory_service.events.dtos;
 
 import java.time.Instant;
 import java.util.List;
 
-public class OrderPlacedEvent {
+public class InventoryReservedEvent {
     private String orderNumber;
     private String correlationId;
     private Instant timestamp;
     private List<LineItem> lineItems;
 
-    public OrderPlacedEvent() {
-    }
+    public InventoryReservedEvent() {}
 
-    public OrderPlacedEvent(String orderNumber, String correlationId, Instant timestamp, List<LineItem> lineItems) {
+    public InventoryReservedEvent(String orderNumber, String correlationId, Instant timestamp, List<LineItem> lineItems) {
         this.orderNumber = orderNumber;
         this.correlationId = correlationId;
         this.timestamp = timestamp;
@@ -55,8 +54,7 @@ public class OrderPlacedEvent {
         private Long productId;
         private Integer quantity;
 
-        public LineItem() {
-        }
+        public LineItem() {}
 
         public LineItem(Long productId, Integer quantity) {
             this.productId = productId;
@@ -79,4 +77,5 @@ public class OrderPlacedEvent {
             this.quantity = quantity;
         }
     }
+    
 }

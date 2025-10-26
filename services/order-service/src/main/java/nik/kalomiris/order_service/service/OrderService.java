@@ -1,5 +1,6 @@
 package nik.kalomiris.order_service.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -41,6 +42,14 @@ public class OrderService {
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
 
+        // Validate line items contain productId
+        orderRequest.getOrderLineItemsDtoList().forEach(itemDto -> {
+                if (itemDto.getProductId() == null) {
+                    throw new IllegalArgumentException("Product ID is required for all order line items.");
+                }
+            }
+        );
+
         List<OrderLineItem> orderLineItems = orderRequest
             .getOrderLineItemsDtoList()
             .stream()
@@ -51,7 +60,15 @@ public class OrderService {
 
         orderRepository.save(order);
 
-        OrderPlacedEvent event = new OrderPlacedEvent(order.getOrderNumber());
+        OrderPlacedEvent event = new OrderPlacedEvent(
+            order.getOrderNumber(),
+            order.getOrderNumber(),
+            Instant.now(),
+            order.getOrderLineItems()
+                .stream()
+                .map(li -> new OrderPlacedEvent.LineItem(li.getProductId(), li.getQuantity()))
+                .toList()
+        );
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_ORDER_CREATED, event);
 
         // Publish a log event about the order creation. Ignore logging failures.

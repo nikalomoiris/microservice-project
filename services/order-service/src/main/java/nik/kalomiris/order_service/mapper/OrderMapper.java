@@ -11,6 +11,7 @@ public class OrderMapper {
         orderLineItem.setPrice(orderLineItemsDto.getPrice());
         orderLineItem.setQuantity(orderLineItemsDto.getQuantity());
         orderLineItem.setSku(orderLineItemsDto.getSku());
+        orderLineItem.setProductId(orderLineItemsDto.getProductId());
         return orderLineItem;
     }
 }

@@ -1,25 +1,45 @@
 package nik.kalomiris.inventory_service.events.dtos;
 
 import java.util.List;
+import java.time.Instant;
 
 public class OrderEvent {
-    private String orderId;
+    private String orderNumber;
+    private String correlationId;
+    private Instant timestamp;
     private List<OrderLineItem> lineItems;
 
-    public OrderEvent() {
-    }
+    public OrderEvent() {}
 
-    public OrderEvent(String orderId, List<OrderLineItem> lineItems) {
-        this.orderId = orderId;
+    public OrderEvent(String orderNumber, String correlationId, Instant timestamp, List<OrderLineItem> lineItems) {
+        this.orderNumber = orderNumber;
+        this.correlationId = correlationId;
+        this.timestamp = timestamp;
         this.lineItems = lineItems;
     }
 
-    public String getOrderId() {
-        return orderId;
+    public String getOrderNumber() {
+        return orderNumber;
     }
 
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
+    public void setOrderNumber(String orderNumber) {
+        this.orderNumber = orderNumber;
+    }
+
+    public String getCorrelationId() {
+        return correlationId;
+    }
+
+    public void setCorrelationId(String correlationId) {
+        this.correlationId = correlationId;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Instant timestamp) {
+        this.timestamp = timestamp;
     }
 
     public List<OrderLineItem> getLineItems() {
