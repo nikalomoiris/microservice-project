@@ -14,6 +14,7 @@ import nik.kalomiris.order_service.domain.OrderStatus;
 import nik.kalomiris.order_service.dto.InventoryReservationFailedEvent;
 import nik.kalomiris.order_service.dto.InventoryReservedEvent;
 import nik.kalomiris.order_service.repository.OrderRepository;
+import nik.kalomiris.order_service.util.RetryUtils;
 
 @Component
 public class InventoryEventListener {
@@ -41,9 +42,13 @@ public class InventoryEventListener {
             return;
         }
         // Only allow CREATED -> RESERVED
-        if (order.getStatus() == OrderStatus.CREATED) {
-            order.setStatus(OrderStatus.RESERVED);
-            orderRepository.save(order);
+        if (canTransitionTo(order.getStatus(), OrderStatus.RESERVED)) {
+            RetryUtils.retryOnOptimisticLock(() -> {
+                Order toUpdate = orderRepository.findById(order.getId()).orElseThrow();
+                toUpdate.setStatus(OrderStatus.RESERVED);
+                orderRepository.save(toUpdate);
+                return null;
+            }, 3, 100);
             logger.info("Order {} status updated to RESERVED", order.getOrderNumber());
         } else {
             logger.warn("Unexpected state transition for order {}: {} - RESERVED", order.getOrderNumber(), order.getStatus());
@@ -66,13 +71,26 @@ public class InventoryEventListener {
             return;
         }
         // Only allow CREATED -> RESERVATION_FAILED (or PARTIALLY_RESERVED -> RESERVATION_FAILED)
-        if (order.getStatus() == OrderStatus.CREATED || order.getStatus() == OrderStatus.PARTIALLY_RESERVED) {
-            order.setStatus(OrderStatus.RESERVATION_FAILED);
-            orderRepository.save(order);
+        if (canTransitionTo(order.getStatus(), OrderStatus.RESERVATION_FAILED)) {
+            RetryUtils.retryOnOptimisticLock(() -> {
+                Order toUpdate = orderRepository.findById(order.getId()).orElseThrow();
+                toUpdate.setStatus(OrderStatus.RESERVATION_FAILED);
+                orderRepository.save(toUpdate);
+                return null;
+            }, 3, 100);
             logger.info("Order {} status updated to RESERVATION_FAILED", order.getOrderNumber());
         } else {
             logger.warn("Unexpected state transition for order {}: {} - RESERVATION_FAILED", order.getOrderNumber(), order.getStatus());
         }
+    }
+
+    private boolean canTransitionTo(OrderStatus current, OrderStatus target) {
+        return switch (current) {
+            case CREATED -> target == OrderStatus.RESERVED || target == OrderStatus.RESERVATION_FAILED || target == OrderStatus.PARTIALLY_RESERVED;
+            case PARTIALLY_RESERVED -> target == OrderStatus.RESERVED || target == OrderStatus.RESERVATION_FAILED;
+            case RESERVED -> target == OrderStatus.SHIPPED || target == OrderStatus.COMPLETED;
+            default -> false;
+        };
     }
     
 }
