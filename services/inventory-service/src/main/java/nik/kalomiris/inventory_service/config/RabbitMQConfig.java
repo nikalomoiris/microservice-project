@@ -17,6 +17,8 @@ public class RabbitMQConfig {
     public static final String ORDER_EXCHANGE_NAME = "order-exchange";
     public static final String ORDER_CREATED_QUEUE_NAME = "order.created.inventory.queue";
     public static final String ROUTING_KEY_ORDER_CREATED = "order.created";
+    public static final String ROUTING_KEY_ORDER_INVENTORY_RESERVED = "order.inventory.reserved";
+    public static final String ROUTING_KEY_ORDER_INVENTORY_RESERVATION_FAILED = "order.inventory.reservation_failed";
 
     @Bean
     public TopicExchange productExchange() {

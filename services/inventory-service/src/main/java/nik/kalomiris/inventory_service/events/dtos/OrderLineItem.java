@@ -1,30 +1,13 @@
 package nik.kalomiris.inventory_service.events.dtos;
 
+/**
+ * Deprecated local DTO.
+ *
+ * @deprecated Use {@link nik.kalomiris.events.dtos.OrderLineItem} from the
+ * shared `event-contracts` module instead.
+ */
+@Deprecated(since = "2025-10-27", forRemoval = true)
 public class OrderLineItem {
-    private Long productId;
-    private Integer quantity;
-
-    public OrderLineItem() {
-    }
-
-    public OrderLineItem(Long productId, Integer quantity) {
-        this.productId = productId;
-        this.quantity = quantity;
-    }
-
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
+    // Deprecated shim - intentionally empty. Remove this class after migrating
+    // any remaining references to the shared DTO.
 }

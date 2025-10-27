@@ -14,6 +14,7 @@ public class OrderLineItem {
     private String sku;
     private BigDecimal price;
     private Integer quantity;
+    private Long productId; // NEW
 
     public OrderLineItem() {}
 
@@ -21,12 +22,14 @@ public class OrderLineItem {
         Long id,
         String sku,
         BigDecimal price,
-        Integer quantity
+        Integer quantity,
+        Long productId
     ) {
         this.id = id;
         this.sku = sku;
         this.price = price;
         this.quantity = quantity;
+        this.productId = productId;
     }
 
     public Long getId() {
@@ -59,5 +62,13 @@ public class OrderLineItem {
 
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
+    }
+
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
     }
 }

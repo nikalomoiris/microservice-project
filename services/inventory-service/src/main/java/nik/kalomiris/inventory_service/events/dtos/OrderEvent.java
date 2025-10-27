@@ -1,32 +1,13 @@
 package nik.kalomiris.inventory_service.events.dtos;
 
-import java.util.List;
-
+/**
+ * Deprecated local DTO.
+ *
+ * @deprecated Use {@link nik.kalomiris.events.dtos.OrderEvent} from the shared
+ * `event-contracts` module instead.
+ */
+@Deprecated(since = "2025-10-27", forRemoval = true)
 public class OrderEvent {
-    private String orderId;
-    private List<OrderLineItem> lineItems;
-
-    public OrderEvent() {
-    }
-
-    public OrderEvent(String orderId, List<OrderLineItem> lineItems) {
-        this.orderId = orderId;
-        this.lineItems = lineItems;
-    }
-
-    public String getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
-    }
-
-    public List<OrderLineItem> getLineItems() {
-        return lineItems;
-    }
-
-    public void setLineItems(List<OrderLineItem> lineItems) {
-        this.lineItems = lineItems;
-    }
+    // Deprecated shim - intentionally empty. Migrate to
+    // nik.kalomiris.events.dtos.OrderEvent and remove this class.
 }
