@@ -1,3 +1,81 @@
+# Order lifecycle & message flow
+
+This document describes the event shapes, routing keys and lifecycle transitions for orders.
+
+## High level flow
+
+- Client POSTs an order to `order-service`.
+- `order-service` persists the order (status = CREATED) and publishes `order.created` (OrderPlacedEvent) containing line items with `productId` and `quantity`.
+- `inventory-service` consumes `order.created`, attempts to reserve/commit stock and publishes one of:
+  - `order.inventory.reserved` (InventoryReservedEvent) — all items reserved/committed
+  - `order.inventory.partially_reserved` (InventoryPartiallyReservedEvent) — partial success
+  - `order.inventory.reservation_failed` (InventoryReservationFailedEvent) — failure
+- `order-service` consumes inventory outcome events and updates `Order.status` accordingly.
+
+## OrderPlacedEvent (published by order-service)
+
+Example JSON:
+
+```json
+{
+  "orderNumber": "0f3b2e8a-...",
+  "correlationId": "0f3b2e8a-...",
+  "timestamp": "2025-10-26T13:00:00Z",
+  "lineItems": [
+    { "productId": 42, "quantity": 2 },
+    { "productId": 7, "quantity": 1 }
+  ]
+}
+```
+
+Routing key: `order.created`
+Exchange: `order-exchange`
+
+Notes: `correlationId` is optional; currently set to `orderNumber` to simplify tracing.
+
+## Inventory outcome events
+
+- InventoryReservedEvent (routing key `order.inventory.reserved`)
+
+Example:
+
+```json
+{
+  "orderNumber": "0f3b2e8a-...",
+  "correlationId": "0f3b2e8a-...",
+  "timestamp": "2025-10-26T13:00:01Z",
+  "lineItems": [ { "productId": 42, "quantity": 2 } ]
+}
+```
+
+- InventoryReservationFailedEvent (routing key `order.inventory.reservation_failed`)
+
+Example:
+
+```json
+{
+  "orderNumber": "0f3b2e8a-...",
+  "correlationId": "0f3b2e8a-...",
+  "timestamp": "2025-10-26T13:00:01Z",
+  "reason": "Insufficient stock",
+  "attemptedItems": [ { "productId": 7, "quantity": 5 } ]
+}
+```
+
+## Order status transitions
+
+- CREATED -> RESERVED (when inventory reserves all items)
+- CREATED -> RESERVATION_FAILED (when inventory fails to reserve any required items)
+- CREATED -> PARTIALLY_RESERVED (when some but not all items reserved)
+- PARTIALLY_RESERVED -> RESERVED or RESERVATION_FAILED
+- RESERVED -> SHIPPED -> COMPLETED
+
+Allowed transitions are enforced in `order-service` for idempotency and safety.
+
+## Rollout notes
+
+- Because we changed the `order.created` event shape (added lineItems/productId), deploy `inventory-service` changes before `order-service` in production.
+- For a safe migration, make inventory listener tolerant of the old and new shapes for a short compatibility window.
 # RabbitMQ Message Flow — microservices-project
 
 This file contains a Mermaid diagram for the RabbitMQ message flow between services, plus a short mapping and payload notes.

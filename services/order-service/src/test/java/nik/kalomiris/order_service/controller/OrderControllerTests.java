@@ -12,6 +12,7 @@ import nik.kalomiris.order_service.dto.OrderRequest;
 import nik.kalomiris.order_service.repository.OrderRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import nik.kalomiris.logging_client.LogPublisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,6 +39,10 @@ public class OrderControllerTests {
     @MockBean
     private RabbitTemplate rabbitTemplate;
 
+    @SuppressWarnings("removal")
+    @MockBean
+    private LogPublisher logPublisher;
+
     @Test
     void shouldCreateOrder() throws Exception {
         OrderRequest orderRequest = getOrderRequest();
@@ -59,6 +64,7 @@ public class OrderControllerTests {
     private OrderRequest getOrderRequest() {
         OrderRequest orderRequest = new OrderRequest();
         OrderLineItemsDto orderLineItemsDto = new OrderLineItemsDto();
+        orderLineItemsDto.setProductId(1L);
         orderLineItemsDto.setSku("test-sku");
         orderLineItemsDto.setPrice(BigDecimal.TEN);
         orderLineItemsDto.setQuantity(1);
