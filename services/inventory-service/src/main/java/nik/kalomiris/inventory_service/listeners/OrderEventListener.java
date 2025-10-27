@@ -2,10 +2,10 @@ package nik.kalomiris.inventory_service.listeners;
 
 import nik.kalomiris.inventory_service.InventoryService;
 import nik.kalomiris.inventory_service.config.RabbitMQConfig;
-import nik.kalomiris.inventory_service.events.dtos.InventoryReservationFailedEvent;
-import nik.kalomiris.inventory_service.events.dtos.InventoryReservedEvent;
-import nik.kalomiris.inventory_service.events.dtos.OrderEvent;
-import nik.kalomiris.inventory_service.events.dtos.OrderLineItem;
+import nik.kalomiris.events.dtos.InventoryReservationFailedEvent;
+import nik.kalomiris.events.dtos.InventoryReservedEvent;
+import nik.kalomiris.events.dtos.OrderEvent;
+import nik.kalomiris.events.dtos.OrderLineItem;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -32,12 +32,12 @@ public class OrderEventListener {
     @RabbitListener(queues = RabbitMQConfig.ORDER_CREATED_QUEUE_NAME)
     public void handleOrderCreatedEvent(OrderEvent orderEvent) {
         logger.info("Received order created event for orderNumber: {}", orderEvent.getOrderNumber());
-        List<InventoryReservedEvent.LineItem> reservedItems = new ArrayList<>();
+    List<OrderLineItem> reservedItems = new ArrayList<>();
         try {
             for (OrderLineItem item : orderEvent.getLineItems()) {
                 try {
                     inventoryService.commitStock(item.getProductId(), item.getQuantity());
-                    reservedItems.add(new InventoryReservedEvent.LineItem(item.getProductId(), item.getQuantity()));
+                    reservedItems.add(new OrderLineItem(item.getProductId(), item.getQuantity()));
                     logger.info("Committed stock for product ID: {} quantity: {}", item.getProductId(), item.getQuantity());
                 } catch (Exception e) {
                     logger.error("Failed to commit stock for product ID: {}. Reason: {}", item.getProductId(), e.getMessage());

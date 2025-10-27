@@ -2,6 +2,7 @@ package nik.kalomiris.product_service.product;
 
 
 import nik.kalomiris.product_service.config.RabbitMQConfig;
+import nik.kalomiris.events.dtos.ProductCreatedEvent;
 import nik.kalomiris.logging_client.LogPublisher;
 import nik.kalomiris.logging_client.LogMessage;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -110,8 +111,8 @@ public class ProductService {
 
         Product savedProduct = productRepository.save(product);
 
-        // Send a message to RabbitMQ
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_PRODUCT_CREATED, savedProduct.getSku());
+    // Send a message to RabbitMQ
+    rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_PRODUCT_CREATED, new ProductCreatedEvent(savedProduct.getSku()));
 
         // Publish a log event about the created product. Ignore logging failures.
         try {

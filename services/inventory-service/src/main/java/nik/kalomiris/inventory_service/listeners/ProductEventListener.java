@@ -2,7 +2,7 @@ package nik.kalomiris.inventory_service.listeners;
 
 import nik.kalomiris.inventory_service.InventoryService;
 import nik.kalomiris.inventory_service.config.RabbitMQConfig;
-import nik.kalomiris.inventory_service.events.dtos.ProductCreatedEvent;
+import nik.kalomiris.events.dtos.ProductCreatedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

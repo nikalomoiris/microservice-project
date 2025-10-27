@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import nik.kalomiris.order_service.config.RabbitMQConfig;
 import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderStatus;
-import nik.kalomiris.order_service.dto.InventoryReservationFailedEvent;
-import nik.kalomiris.order_service.dto.InventoryReservedEvent;
+import nik.kalomiris.events.dtos.InventoryReservationFailedEvent;
+import nik.kalomiris.events.dtos.InventoryReservedEvent;
 import nik.kalomiris.order_service.repository.OrderRepository;
 import nik.kalomiris.order_service.util.RetryUtils;
 
