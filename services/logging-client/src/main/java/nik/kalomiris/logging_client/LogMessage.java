@@ -7,6 +7,11 @@ import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LogMessage {
+    /**
+     * Represents a structured log payload that is serialized to JSON and
+     * published to the logging topic. Fields are optional to keep messages
+     * compact; metadata can be used to attach structured key/value pairs.
+     */
     private String timestamp;
     private String level;
     private String service;

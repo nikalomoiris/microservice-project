@@ -19,6 +19,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("api/products")
 public class ProductController {
+    /**
+     * REST API for product operations (create, read). Keep controllers thin
+     * and delegate business logic to {@link ProductService}.
+     */
 
     private final ProductService productService;
 

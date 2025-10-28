@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 @RequestMapping("/api/reviews")
 public class ReviewController {
+    /**
+     * REST endpoints for creating and querying reviews. Controller keeps
+     * request/response mapping simple and delegates to {@link ReviewService}.
+     */
 
     private final ReviewService reviewService;
 

@@ -1,6 +1,10 @@
 package nik.kalomiris.events.dtos;
 
 public class ProductCreatedEvent {
+    /**
+     * Event published when a product is created in the product-service.
+     * Other services (like inventory) consume this to create related records.
+     */
     private Long productId;
     private String sku;
 

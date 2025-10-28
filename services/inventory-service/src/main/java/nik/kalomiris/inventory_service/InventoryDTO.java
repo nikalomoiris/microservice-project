@@ -2,6 +2,11 @@
 package nik.kalomiris.inventory_service;
 
 public class InventoryDTO {
+    /**
+     * Data Transfer Object used by the REST API to expose inventory state.
+     *
+     * - `inStock` is a convenience flag computed from `quantity`.
+     */
     private String sku;
     private Integer quantity;
     private Integer reservedQuantity;

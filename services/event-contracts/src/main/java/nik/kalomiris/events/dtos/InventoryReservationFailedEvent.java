@@ -4,6 +4,10 @@ import java.time.Instant;
 import java.util.List;
 
 public class InventoryReservationFailedEvent {
+    /**
+     * Event published when inventory reservation/commit fails for an order.
+     * Contains a human-readable `reason` and the items that were attempted.
+     */
     private String orderNumber;
     private String correlationId;
     private Instant timestamp;

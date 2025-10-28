@@ -8,6 +8,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
+    /**
+     * REST controller for category operations. Controllers should be thin and
+     * delegate behavior to service layers (if added) or repositories.
+     */
 
     private final CategoryRepository categoryRepository;
 

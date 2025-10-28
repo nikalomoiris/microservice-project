@@ -14,6 +14,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/inventory")
+/**
+ * HTTP REST controller exposing inventory operations used by clients and tests.
+ *
+ * Keep controllers thin: delegate to {@link InventoryService} for business logic.
+ */
 public class InventoryController {
 
     private final InventoryService inventoryService;

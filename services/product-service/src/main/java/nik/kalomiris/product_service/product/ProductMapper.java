@@ -11,6 +11,11 @@ import java.util.List;
 @Component
 public class ProductMapper {
 
+    /**
+     * Mapper between Product entity and ProductDTO. Keep mapping logic
+     * straightforward to avoid leaking domain logic into transport models.
+     */
+
     private final CategoryRepository categoryRepository;
     private final ImageRepository imageRepository;
 

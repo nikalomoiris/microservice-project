@@ -12,6 +12,13 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 public class RabbitMQConfig {
 
+    /**
+     * RabbitMQ configuration for the product service.
+     *
+     * Declares a topic exchange and configures a JSON message converter and
+     * RabbitTemplate for publishing product-related events.
+     */
+
     public static final String EXCHANGE_NAME = "product-exchange";
     public static final String ROUTING_KEY_PRODUCT_CREATED = "product.created";
 

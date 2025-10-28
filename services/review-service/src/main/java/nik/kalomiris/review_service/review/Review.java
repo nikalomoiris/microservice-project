@@ -8,6 +8,10 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "reviews")
 public class Review {
+    /**
+     * Entity representing a product review. Includes rating, text comment
+     * and simple upvote/downvote counters used by the UI.
+     */
 
     @Id
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)

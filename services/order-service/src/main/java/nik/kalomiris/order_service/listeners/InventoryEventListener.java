@@ -19,6 +19,14 @@ import nik.kalomiris.order_service.util.RetryUtils;
 @Component
 public class InventoryEventListener {
 
+    /**
+     * Component listening to inventory-related integration events from RabbitMQ.
+     *
+     * It updates local Order state based on inventory outcomes. The listener
+     * methods are transactional and use optimistic-lock retry helper when
+     * updating the order to avoid lost updates under concurrent processing.
+     */
+
     private static final Logger logger = LoggerFactory.getLogger(InventoryEventListener.class);
     private final OrderRepository orderRepository;
 
@@ -85,6 +93,7 @@ public class InventoryEventListener {
     }
 
     private boolean canTransitionTo(OrderStatus current, OrderStatus target) {
+        // Helper that encodes valid state transitions for the Order state machine.
         return switch (current) {
             case CREATED -> target == OrderStatus.RESERVED || target == OrderStatus.RESERVATION_FAILED || target == OrderStatus.PARTIALLY_RESERVED;
             case PARTIALLY_RESERVED -> target == OrderStatus.RESERVED || target == OrderStatus.RESERVATION_FAILED;

@@ -9,6 +9,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class LogPublisher {
 
+    /**
+     * Lightweight client for publishing structured log messages to Kafka.
+     *
+     * Provides backward-compatible support for plain string messages as
+     * well as structured {@link LogMessage} objects serialized as JSON.
+     */
+
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final String topic;
     private final ObjectMapper objectMapper;

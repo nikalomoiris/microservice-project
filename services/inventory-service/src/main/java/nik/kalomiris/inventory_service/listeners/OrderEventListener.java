@@ -20,6 +20,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderEventListener {
 
+    /**
+     * Listens for OrderCreated events and attempts to commit stock for each
+     * ordered line item. On partial or full failure an InventoryReservationFailedEvent
+     * is published so the originating service can react.
+     *
+     * This listener keeps processing simple and emits events for downstream
+     * coordination via RabbitMQ.
+     */
+
     private static final Logger logger = LoggerFactory.getLogger(OrderEventListener.class);
     private final InventoryService inventoryService;
     private final RabbitTemplate rabbitTemplate;

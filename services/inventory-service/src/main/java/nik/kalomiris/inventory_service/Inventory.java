@@ -10,6 +10,17 @@ import jakarta.persistence.Column;
 
 @Entity
 @Table(name = "inventory")
+/**
+ * JPA entity storing inventory state for a product SKU.
+ *
+ * Fields:
+ * - `productId` links the inventory row to the product-service identifier.
+ * - `quantity` is the total available stock.
+ * - `reservedQuantity` is the amount currently reserved (not yet committed).
+ *
+ * The model intentionally separates reserved vs available to support
+ * eventual-consistency patterns when coordinating across services.
+ */
 public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

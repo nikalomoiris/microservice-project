@@ -10,6 +10,11 @@ import nik.kalomiris.product_service.image.Image;
 @Entity
 @Table(name = "products")
 public class Product {
+    /**
+     * Domain entity representing a product in the catalog.
+     *
+     * Fields include sku, name, price and relations to categories/images.
+     */
 
     @Id
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)

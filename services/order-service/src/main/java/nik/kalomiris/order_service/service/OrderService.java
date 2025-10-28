@@ -23,6 +23,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class OrderService {
 
+    /**
+     * Service responsible for creating orders and coordinating side effects
+     * such as publishing integration events and emitting structured logs.
+     *
+     * Design notes:
+     * - Persists the Order entity within a transaction.
+     * - Registers a transaction synchronization to publish the order-created
+     *   RabbitMQ event only after the DB transaction commits (avoids races).
+     * - Emits a structured log event using the project's logging client.
+     */
+
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final RabbitTemplate rabbitTemplate;
@@ -41,6 +52,15 @@ public class OrderService {
     }
 
     public void createOrder(OrderRequest orderRequest) {
+        /**
+         * Create a new Order from the incoming request.
+         *
+         * Responsibilities:
+         * - validate required fields (productId present on line items)
+         * - persist the Order and its line items
+         * - publish an OrderEvent to RabbitMQ after successful commit
+         * - publish a log event (best-effort)
+         */
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
 
