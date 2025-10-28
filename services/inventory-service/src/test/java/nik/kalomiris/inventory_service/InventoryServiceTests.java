@@ -26,14 +26,17 @@ public class InventoryServiceTests {
     @BeforeEach
     void setUp() {
         inventoryRepository.deleteAll();
-        inventory = new Inventory("TEST-SKU", 100, 10);
-        inventory = inventoryRepository.save(inventory);
+    inventory = new Inventory("TEST-SKU", 100, 10);
+    inventory = inventoryRepository.save(inventory);
+    // ensure productId is populated for the newer productId-based lookups
+    inventory.setProductId(inventory.getId());
+    inventory = inventoryRepository.save(inventory);
     }
 
     @Test
     void reserveStock_shouldIncreaseReservedQuantity_whenStockIsAvailable() {
-        // Act
-        inventoryService.reserveStock(inventory.getId(), 20);
+    // Act
+    inventoryService.reserveStock(inventory.getProductId(), 20);
 
         // Assert
         Inventory updatedInventory = inventoryRepository.findById(inventory.getId()).get();
@@ -46,14 +49,14 @@ public class InventoryServiceTests {
         // Assert
         assertThrows(InsufficientStockException.class, () -> {
             // Act
-            inventoryService.reserveStock(inventory.getId(), 100); // Available is 90
+            inventoryService.reserveStock(inventory.getProductId(), 100); // Available is 90
         });
     }
 
     @Test
     void releaseStock_shouldDecreaseReservedQuantity() {
-        // Act
-        inventoryService.releaseStock(inventory.getId(), 5);
+    // Act
+    inventoryService.releaseStock(inventory.getProductId(), 5);
 
         // Assert
         Inventory updatedInventory = inventoryRepository.findById(inventory.getId()).get();
@@ -65,14 +68,14 @@ public class InventoryServiceTests {
         // Assert
         assertThrows(InsufficientStockException.class, () -> {
             // Act
-            inventoryService.releaseStock(inventory.getId(), 15); // Only 10 are reserved
+            inventoryService.releaseStock(inventory.getProductId(), 15); // Only 10 are reserved
         });
     }
 
     @Test
     void commitStock_shouldDecreaseQuantityAndReservedQuantity() {
-        // Act
-        inventoryService.commitStock(inventory.getId(), 5);
+    // Act
+    inventoryService.commitStock(inventory.getProductId(), 5);
 
         // Assert
         Inventory updatedInventory = inventoryRepository.findById(inventory.getId()).get();
@@ -85,7 +88,7 @@ public class InventoryServiceTests {
         // Assert
         assertThrows(InsufficientStockException.class, () -> {
             // Act
-            inventoryService.commitStock(inventory.getId(), 15); // Only 10 are reserved
+            inventoryService.commitStock(inventory.getProductId(), 15); // Only 10 are reserved
         });
     }
 

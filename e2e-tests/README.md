@@ -20,7 +20,7 @@ From the repo root:
 
 ```bash
 cd e2e-tests
-SKIP_COMPOSE=true mvn -DskipTests=false test -DtrimStackTrace=false
+SKIP_COMPOSE=false mvn -f e2e-tests/pom.xml test -DskipTests=false -DtrimStackTrace=false
 ```
 
 Notes

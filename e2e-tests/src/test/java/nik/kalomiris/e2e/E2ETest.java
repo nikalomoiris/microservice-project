@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -24,20 +26,46 @@ public class E2ETest {
     private static DockerComposeContainer<?> environment;
     // If SKIP_COMPOSE=true, tests will assume docker-compose services are already running on localhost
     private static final boolean USE_EXTERNAL_COMPOSE = Boolean.parseBoolean(System.getenv().getOrDefault("SKIP_COMPOSE", "false"));
+    // When the test starts compose via the host docker CLI, mark this so we use localhost mappings
+    private static boolean LOCAL_COMPOSE_STARTED = false;
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final OkHttpClient HTTP = new OkHttpClient.Builder()
             .callTimeout(Duration.ofMinutes(2))
             .build();
+    private static final Logger log = LoggerFactory.getLogger(E2ETest.class);
+
+    // constants
+    private static final String LOCALHOST = "localhost";
+    private static final String HTTP_PREFIX = "http://";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String INVENTORY_PATH = "/inventory/";
+    private static final int POLL_INTERVAL_MS = 500;
 
     @BeforeAll
     public static void startCompose() throws Exception {
         if (USE_EXTERNAL_COMPOSE) {
             // assume user started docker-compose manually (services are mapped to localhost ports per repo compose)
-            System.out.println("SKIP_COMPOSE=true - skipping Testcontainers docker-compose startup and using localhost: mapped ports");
+            log.info("SKIP_COMPOSE=true - skipping Testcontainers docker-compose startup and using localhost: mapped ports");
+            return;
+        }
+        File compose = new File("/Users/heliconmuse/Coding/microservices-project/docker-compose.yml");
+
+        // Try to start compose using the host docker CLI (works with Docker Desktop on macOS/Apple Silicon).
+        // This avoids Testcontainers pulling the docker/compose image (which is often amd64-only).
+        if (tryStartLocalDockerCompose(compose)) {
+            LOCAL_COMPOSE_STARTED = true;
+            System.out.println("Started docker-compose via local docker CLI; waiting for services to be reachable on localhost...");
+            // wait for key services to be reachable on their host ports (product, inventory, order, rabbitmq, postgres)
+            waitForService("localhost", 8080, Duration.ofMinutes(3));
+            waitForService("localhost", 8083, Duration.ofMinutes(3));
+            waitForService("localhost", 8081, Duration.ofMinutes(3));
+            waitForService("localhost", 5672, Duration.ofMinutes(3));
+            waitForService("localhost", 5432, Duration.ofMinutes(3));
+            System.out.println("Services are reachable; proceeding with tests.");
             return;
         }
 
-        File compose = new File("/Users/heliconmuse/Coding/microservices-project/docker-compose.yml");
+        // Fallback: let Testcontainers start docker-compose (may pull docker/compose image and fail on Apple Silicon)
         environment = new DockerComposeContainer<>(compose)
                 .withExposedService("product-service", 8080, Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(3)))
                 .withExposedService("order-service", 8081, Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(3)))
@@ -48,6 +76,34 @@ public class E2ETest {
         environment.start();
     }
 
+    private static boolean tryStartLocalDockerCompose(File composeFile) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("docker", "compose", "-f", composeFile.getAbsolutePath(), "up", "-d");
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+            String out = new String(p.getInputStream().readAllBytes());
+            log.debug("docker compose output: {}", out);
+            int exit = p.waitFor();
+            return exit == 0;
+        } catch (Exception e) {
+            log.warn("Local docker compose failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private static void waitForService(String host, int port, Duration timeout) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            try (java.net.Socket s = new java.net.Socket()) {
+                s.connect(new java.net.InetSocketAddress(host, port), 2000);
+                return; // success
+            } catch (Exception ignored) {
+                Thread.sleep(500);
+            }
+        }
+        throw new IllegalStateException("Service not reachable: " + host + ":" + port + " after " + timeout);
+    }
+
     @AfterAll
     public static void stopCompose() {
         if (environment != null) {
@@ -56,156 +112,146 @@ public class E2ETest {
     }
 
     @Test
-    public void createProduct_setInventory_placeOrder_andCommit() throws Exception {
-        // 1) Create a category via product-service REST API
-        String productHost;
-        int productPort;
-        if (USE_EXTERNAL_COMPOSE) {
-            productHost = "localhost";
-            productPort = 8080;
-        } else {
-            productHost = environment.getServiceHost("product-service", 8080);
-            productPort = environment.getServicePort("product-service", 8080);
-        }
-        String productBase = "http://" + productHost + ":" + productPort + "/api";
+    public void createProductSetInventoryPlaceOrderAndCommit() throws Exception {
+        long categoryId = createCategoryIfMissing("e2e-cat");
+        JsonNode prod = createProduct(categoryId);
+        long productId = prod.get("id").asLong();
+        String sku = prod.get("sku").asText();
 
-        // create category
-        String categoryJson = "{\"name\":\"e2e-cat\",\"description\":\"e2e test category\"}";
-        RequestBody catBody = RequestBody.create(categoryJson, MediaType.get("application/json"));
+        boolean inventoryReady = waitForInventorySku(sku, Duration.ofSeconds(30));
+        assertTrue(inventoryReady, "inventory record created by event listener within timeout");
+
+        setInventoryQuantity(productId, 100);
+        reserveInventory(productId, 2);
+        placeOrder(productId, sku, 2);
+
+        boolean commitObserved = pollForCommit(sku, 98, 0, Duration.ofSeconds(30));
+        assertTrue(commitObserved, "inventory commit observed within timeout (quantity=98, reserved=0)");
+    }
+
+    // --- helpers ---------------------------------------------------------
+    private String serviceBase(String serviceName, int port) {
+        String host;
+        int svcPort;
+        if (USE_EXTERNAL_COMPOSE || LOCAL_COMPOSE_STARTED) {
+            host = LOCALHOST;
+            svcPort = port;
+        } else {
+            host = environment.getServiceHost(serviceName, port);
+            svcPort = environment.getServicePort(serviceName, port);
+        }
+        return HTTP_PREFIX + host + ":" + svcPort + "/api";
+    }
+
+    private long createCategoryIfMissing(String name) throws Exception {
+        String productBase = serviceBase("product-service", 8080);
+        String categoryJson = MAPPER.createObjectNode().put("name", name).put("description", "e2e test category").toString();
+        RequestBody catBody = RequestBody.create(categoryJson, MediaType.get(APPLICATION_JSON));
         Request catReq = new Request.Builder().url(productBase + "/categories").post(catBody).build();
-        long categoryId;
         try (Response r = HTTP.newCall(catReq).execute()) {
             if (r.isSuccessful()) {
                 JsonNode cat = MAPPER.readTree(r.body().bytes());
-                categoryId = cat.get("id").asLong();
-            } else {
-                // If category already exists, find it via GET /api/categories
-                Request listReq = new Request.Builder().url(productBase + "/categories").get().build();
-                try (Response lr = HTTP.newCall(listReq).execute()) {
-                    assertTrue(lr.isSuccessful(), "list categories");
-                    JsonNode arr = MAPPER.readTree(lr.body().bytes());
-                    long found = -1;
-                    for (JsonNode node : arr) {
-                        if ("e2e-cat".equals(node.get("name").asText())) {
-                            found = node.get("id").asLong();
-                            break;
-                        }
-                    }
-                    assertTrue(found != -1, "found existing category");
-                    categoryId = found;
-                }
+                return cat.get("id").asLong();
             }
         }
 
-        // 2) Create product via product-service REST API (product-service will publish ProductCreatedEvent)
-        String createProductJson = "{\"name\":\"E2E Product\",\"description\":\"created by e2e test\",\"price\":12.34,\"categoryIds\":[" + categoryId + "]}";
-        RequestBody prodBody = RequestBody.create(createProductJson, MediaType.get("application/json"));
+        // fallback: list categories and find by name
+        Request listReq = new Request.Builder().url(productBase + "/categories").get().build();
+        try (Response lr = HTTP.newCall(listReq).execute()) {
+            assertTrue(lr.isSuccessful(), "list categories");
+            JsonNode arr = MAPPER.readTree(lr.body().bytes());
+            for (JsonNode node : arr) {
+                if (name.equals(node.get("name").asText())) {
+                    return node.get("id").asLong();
+                }
+            }
+        }
+        throw new IllegalStateException("Failed to create or find category: " + name);
+    }
+
+    private JsonNode createProduct(long categoryId) throws Exception {
+        String productBase = serviceBase("product-service", 8080);
+        JsonNode body = MAPPER.createObjectNode()
+                .put("name", "E2E Product")
+                .put("description", "created by e2e test")
+                .put("price", 12.34)
+                .set("categoryIds", MAPPER.createArrayNode().add(categoryId));
+        RequestBody prodBody = RequestBody.create(body.toString(), MediaType.get(APPLICATION_JSON));
         Request prodReq = new Request.Builder().url(productBase + "/products").post(prodBody).build();
-        long productId;
-        String sku;
         try (Response r = HTTP.newCall(prodReq).execute()) {
             assertEquals(201, r.code(), "product created");
-            JsonNode prod = MAPPER.readTree(r.body().bytes());
-            productId = prod.get("id").asLong();
-            sku = prod.get("sku").asText();
+            return MAPPER.readTree(r.body().bytes());
         }
+    }
 
-        // Prepare inventory service base URL (used for polling and subsequent calls)
-        String invHostForSet;
-        int invPortForSet;
-        if (USE_EXTERNAL_COMPOSE) {
-            invHostForSet = "localhost";
-            invPortForSet = 8083;
-        } else {
-            invHostForSet = environment.getServiceHost("inventory-service", 8083);
-            invPortForSet = environment.getServicePort("inventory-service", 8083);
-        }
-        String invSetBase = "http://" + invHostForSet + ":" + invPortForSet + "/api";
-
-        // 3) Wait for inventory-service to consume the product-created event and create inventory record.
-        // Poll GET /api/inventory/{sku} until it's present (timeout 30s) instead of a fixed sleep. No fallback — be strict.
-        String invCheckUrl = invSetBase + "/inventory/" + sku;
-        boolean inventoryReady = false;
-        long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < 30_000) {
-            Request invCheckReq = new Request.Builder().url(invCheckUrl).get().build();
-            try (Response ir = HTTP.newCall(invCheckReq).execute()) {
-                if (ir.isSuccessful()) {
-                    inventoryReady = true;
-                    break;
-                }
-            } catch (Exception e) {
-                // ignore transient network errors while waiting for the event to be processed
+    private boolean waitForInventorySku(String sku, Duration timeout) throws Exception {
+        String invBase = serviceBase("inventory-service", 8083);
+        String url = invBase + INVENTORY_PATH + sku;
+        long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            Request req = new Request.Builder().url(url).get().build();
+            try (Response r = HTTP.newCall(req).execute()) {
+                if (r.isSuccessful()) return true;
+            } catch (Exception ignored) {
+                // ignore
             }
-            Thread.sleep(500);
+            Thread.sleep(POLL_INTERVAL_MS);
         }
-        assertTrue(inventoryReady, "inventory record created by event listener within timeout");
+        return false;
+    }
 
-        RequestBody setBody = RequestBody.create("100", MediaType.get("application/json"));
-        Request setReq = new Request.Builder().url(invSetBase + "/inventory/" + productId + "/quantity").post(setBody).build();
+    private void setInventoryQuantity(long productId, int qty) throws Exception {
+        String invBase = serviceBase("inventory-service", 8083);
+        RequestBody setBody = RequestBody.create(String.valueOf(qty), MediaType.get(APPLICATION_JSON));
+        Request setReq = new Request.Builder().url(invBase + "/inventory/" + productId + "/quantity").post(setBody).build();
         try (Response r = HTTP.newCall(setReq).execute()) {
             assertTrue(r.isSuccessful(), "set inventory quantity");
         }
+    }
 
-        // Reserve the required quantity so commitStock can succeed when the order is processed.
-        // Inventory controller exposes POST /api/inventory/{productId}/reserver that accepts an integer body.
-        String invHostForReserve;
-        int invPortForReserve;
-        if (USE_EXTERNAL_COMPOSE) {
-            invHostForReserve = "localhost";
-            invPortForReserve = 8083;
-        } else {
-            invHostForReserve = environment.getServiceHost("inventory-service", 8083);
-            invPortForReserve = environment.getServicePort("inventory-service", 8083);
-        }
-        String invReserveBase = "http://" + invHostForReserve + ":" + invPortForReserve + "/api";
-        RequestBody reserveBody = RequestBody.create("2", MediaType.get("application/json"));
-        Request reserveReq = new Request.Builder().url(invReserveBase + "/inventory/" + productId + "/reserver").post(reserveBody).build();
+    private void reserveInventory(long productId, int qty) throws Exception {
+        String invBase = serviceBase("inventory-service", 8083);
+        RequestBody reserveBody = RequestBody.create(String.valueOf(qty), MediaType.get(APPLICATION_JSON));
+        Request reserveReq = new Request.Builder().url(invBase + "/inventory/" + productId + "/reserver").post(reserveBody).build();
         try (Response r = HTTP.newCall(reserveReq).execute()) {
             assertTrue(r.isSuccessful(), "reserve inventory");
         }
+    }
 
-        // 5) Place order via order-service
-        String orderHost;
-        int orderPort;
-        if (USE_EXTERNAL_COMPOSE) {
-            orderHost = "localhost";
-            orderPort = 8081;
-        } else {
-            orderHost = environment.getServiceHost("order-service", 8081);
-            orderPort = environment.getServicePort("order-service", 8081);
-        }
-        String orderBase = "http://" + orderHost + ":" + orderPort + "/api";
-
-        // Build order payload
-        String orderJson = "{\"orderLineItemsDtoList\":[{\"id\":null,\"sku\":\"" + sku + "\",\"price\":12.34,\"quantity\":2,\"productId\": " + productId + "}]}";
-        RequestBody orderBody = RequestBody.create(orderJson, MediaType.get("application/json"));
+    private void placeOrder(long productId, String sku, int qty) throws Exception {
+        String orderBase = serviceBase("order-service", 8081);
+        JsonNode item = MAPPER.createObjectNode()
+                .putNull("id")
+                .put("sku", sku)
+                .put("price", 12.34)
+                .put("quantity", qty)
+                .put("productId", productId);
+        JsonNode body = MAPPER.createObjectNode().set("orderLineItemsDtoList", MAPPER.createArrayNode().add(item));
+        RequestBody orderBody = RequestBody.create(body.toString(), MediaType.get(APPLICATION_JSON));
         Request orderReq = new Request.Builder().url(orderBase + "/orders").post(orderBody).build();
         try (Response r = HTTP.newCall(orderReq).execute()) {
             assertEquals(201, r.code(), "order created");
         }
+    }
 
-        // 6) Poll for inventory change as order is processed (timeout 30s)
-        String invBase = invSetBase; // reuse computed inventory base
-        boolean commitObserved = false;
-        start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < 30_000) {
-            Request invReq = new Request.Builder().url(invBase + "/inventory/" + sku).get().build();
-            try (Response r = HTTP.newCall(invReq).execute()) {
+    private boolean pollForCommit(String sku, int expectedQty, int expectedReserved, Duration timeout) throws Exception {
+        String invBase = serviceBase("inventory-service", 8083);
+        String url = invBase + INVENTORY_PATH + sku;
+        long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            Request req = new Request.Builder().url(url).get().build();
+            try (Response r = HTTP.newCall(req).execute()) {
                 if (r.isSuccessful()) {
                     JsonNode inv = MAPPER.readTree(r.body().bytes());
                     int quantity = inv.get("quantity").asInt();
                     int reserved = inv.get("reservedQuantity").asInt();
-                    if (quantity == 98 && reserved == 0) {
-                        commitObserved = true;
-                        break;
-                    }
+                    if (quantity == expectedQty && reserved == expectedReserved) return true;
                 }
-            } catch (Exception e) {
-                // swallow and retry until timeout
+            } catch (Exception ignored) {
+                // retry
             }
-            Thread.sleep(500);
+            Thread.sleep(POLL_INTERVAL_MS);
         }
-        assertTrue(commitObserved, "inventory commit observed within timeout (quantity=98, reserved=0)");
+        return false;
     }
 }
