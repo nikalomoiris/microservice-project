@@ -11,6 +11,9 @@ import nik.kalomiris.product_service.product.Product;
 
 @Entity
 public class Image {
+    /**
+     * Image entity associated with products; stores minimal metadata and URL.
+     */
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

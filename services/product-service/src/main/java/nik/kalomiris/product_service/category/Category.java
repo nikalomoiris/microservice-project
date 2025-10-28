@@ -9,6 +9,9 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "categories")
 public class Category {
+    /**
+     * Simple category entity used to classify products.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

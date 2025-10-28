@@ -16,6 +16,15 @@ import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 @Service
+/**
+ * Service containing inventory business logic.
+ *
+ * Responsibilities:
+ * - read/update Inventory records
+ * - provide idempotent creation for incoming ProductCreated events
+ * - reserve / release / commit stock with simple validation and exceptions
+ * - publish structured logs via the project's LogPublisher (best-effort)
+ */
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
@@ -38,6 +47,16 @@ public class InventoryService {
                 .map(inventoryMapper::toDto);
     }
 
+    /**
+     * Idempotent creation of an Inventory record.
+     *
+     * Notes:
+     * - Designed to be safe when the same ProductCreatedEvent is processed
+     *   multiple times (checks by productId and sku).
+     * - Uses a lightweight in-process lock per SKU to reduce concurrent
+     *   create races, and catches optimistic locking exceptions which are
+     *   treated as benign (another transaction created the row).
+     */
     public void createInventoryRecord(Long productId, String sku) {
         // Idempotent creation: first check by productId, then by SKU. This reduces
         // races where the same ProductCreatedEvent is processed more than once.
@@ -107,6 +126,13 @@ public class InventoryService {
     }
 
     public void reserveStock(Long productId, Integer amountToReserver) {
+        /**
+         * Reserve a quantity for a given productId.
+         *
+         * Throws {@link InsufficientStockException} when available stock
+         * is insufficient, or {@link InventoryNotFoundException} when no
+         * inventory record exists for the product.
+         */
         Optional<Inventory> inventoryOpt = inventoryRepository.findByProductId(productId);
         if (inventoryOpt.isPresent()) {
             Inventory inventory = inventoryOpt.get();

@@ -11,6 +11,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProductEventListener {
 
+    /**
+     * Listens for ProductCreated events and ensures an Inventory record exists
+     * for the new product. The create is idempotent so duplicate events are safe.
+     */
+
     private static final Logger logger = LoggerFactory.getLogger(ProductEventListener.class);
     private final InventoryService inventoryService;
 

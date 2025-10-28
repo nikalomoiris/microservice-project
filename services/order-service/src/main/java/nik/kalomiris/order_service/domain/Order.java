@@ -5,6 +5,15 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders")
+/**
+ * Domain entity representing a customer's order.
+ *
+ * - `orderNumber` is an externally visible identifier (UUID string).
+ * - `orderLineItems` holds the item rows. Cascade ALL is used so items are
+ *   persisted with the owning Order.
+ * - `status` tracks the order state using {@link OrderStatus}.
+ * - `version` is used for optimistic locking to avoid concurrent write conflicts.
+ */
 public class Order {
 
     @Id

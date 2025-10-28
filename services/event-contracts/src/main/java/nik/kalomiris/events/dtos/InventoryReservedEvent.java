@@ -4,6 +4,10 @@ import java.time.Instant;
 import java.util.List;
 
 public class InventoryReservedEvent {
+    /**
+     * Event indicating inventory was successfully reserved/committed for an order.
+     * Consumers use this to progress order state (e.g., move to RESERVED).
+     */
     private String orderNumber;
     private String correlationId;
     private Instant timestamp;

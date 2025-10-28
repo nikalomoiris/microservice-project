@@ -10,6 +10,9 @@ import org.springframework.data.repository.query.Param;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p JOIN p.categories c WHERE c.name = :categoryName")
+            /**
+             * Repository for Product entities. Simple CRUD and finder methods live here.
+             */
     List<Product> findByCategoryName(@Param("categoryName") String categoryName, Sort sort);
 	
 }

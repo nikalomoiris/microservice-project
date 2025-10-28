@@ -5,6 +5,10 @@ import java.util.List;
 
 
 public class ProductDTO {
+    /**
+     * DTO used by REST APIs to expose product data.
+     * Keep DTOs property-focused and avoid embedding business logic.
+     */
 
     private Long id;
     private String name;

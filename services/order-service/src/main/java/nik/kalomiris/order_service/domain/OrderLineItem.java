@@ -5,6 +5,15 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "order_line_items")
+/**
+ * Entity representing a single line item within an Order.
+ *
+ * Fields:
+ * - `sku` and `price` are read from products at time of ordering.
+ * - `quantity` is how many units were ordered.
+ * - `productId` links back to the product-service identifier and is required
+ *   by business logic when reserving inventory.
+ */
 public class OrderLineItem {
 
     @Id

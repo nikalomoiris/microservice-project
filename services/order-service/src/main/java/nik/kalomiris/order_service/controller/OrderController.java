@@ -7,6 +7,13 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/orders")
+/**
+ * REST controller exposing order-related endpoints.
+ *
+ * Currently exposes a single POST endpoint to create orders. The controller
+ * delegates business logic to {@code OrderService} and returns a simple
+ * confirmation message. Keep controllers thin — no business logic here.
+ */
 public class OrderController {
 
     private final OrderService orderService;
@@ -18,6 +25,7 @@ public class OrderController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public String createOrder(@RequestBody OrderRequest orderRequest) {
+        // Delegate to service which persists the order and emits integration events
         orderService.createOrder(orderRequest);
         return "Order Created Successfully";
     }

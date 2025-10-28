@@ -21,6 +21,13 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class ProductService {
 
+    /**
+     * Business logic for products. Responsible for creating products,
+     * producing ProductCreated events, and mapping between entity and DTO.
+     * Service methods throw domain-specific exceptions that controllers map
+     * to HTTP responses.
+     */
+
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
     private final ImageRepository imageRepository;

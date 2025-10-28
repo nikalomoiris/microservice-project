@@ -6,6 +6,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class InventoryMapper {
 
+    /**
+     * Simple mapper between entity and DTO used by REST endpoints and tests.
+     * Keep mapping logic straightforward so the domain and transport models
+     * remain decoupled.
+     */
+
     public InventoryDTO toDto(Inventory inventory) {
         if (inventory == null) {
             return null;

@@ -11,6 +11,12 @@ import java.util.Optional;
 @Service
 public class ReviewService {
 
+    /**
+     * Service managing review lifecycle: creation, voting and querying.
+     * Publishes lightweight structured log messages for observability but
+     * treats logging failures as non-fatal.
+     */
+
     private static final String SERVICE_NAME = "review-service";
     private static final String REVIEW_SERVICE_LOGGER = "nik.kalomiris.review_service.review.ReviewService";
     private static final String REVIEW_ID="reviewId";

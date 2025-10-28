@@ -7,6 +7,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class LogListener {
 
+    /**
+     * Simple listener that reads structured log JSON messages from Kafka and
+     * pretty-prints them to stdout. Implemented primarily for local/demo use;
+     * production deployments should forward logs to a durable aggregator.
+     */
+
     private final ObjectMapper objectMapper;
 
     public LogListener() {

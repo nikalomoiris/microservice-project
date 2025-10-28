@@ -4,6 +4,13 @@ import java.time.Instant;
 import java.util.List;
 
 public class OrderEvent {
+    /**
+     * Event published when an order is created.
+     *
+     * This DTO is used as the integration contract between order-service and
+     * downstream services (inventory, shipping, etc.). Keep it small and
+     * backwards-compatible; consumers rely on these fields.
+     */
     private String orderNumber;
     private String correlationId;
     private Instant timestamp;
