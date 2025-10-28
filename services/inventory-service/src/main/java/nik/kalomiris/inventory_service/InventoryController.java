@@ -41,5 +41,26 @@ public class InventoryController {
         return ResponseEntity.ok().build();
     }
     
+    @PostMapping("/{productId}/quantity")
+    public ResponseEntity<Void> setQuantity(@PathVariable Long productId, @RequestBody Integer quantity) {
+        inventoryService.setQuantity(productId, quantity);
+        return ResponseEntity.ok().build();
+    }
+
+    // Alternate endpoint that accepts quantity via path variable to avoid any
+    // request-body mapping issues from clients/tests.
+    @PostMapping("/{productId}/quantity/{quantity}")
+    public ResponseEntity<Void> setQuantityPath(@PathVariable Long productId, @PathVariable Integer quantity) {
+        inventoryService.setQuantity(productId, quantity);
+        return ResponseEntity.ok().build();
+    }
+
+    // Test/admin helper: create inventory record if missing (idempotent)
+    @PostMapping("/{productId}/create")
+    public ResponseEntity<Void> createInventoryIfMissing(@PathVariable Long productId, @org.springframework.web.bind.annotation.RequestParam String sku) {
+        inventoryService.createInventoryRecord(productId, sku);
+        return ResponseEntity.ok().build();
+    }
+    
     
 }

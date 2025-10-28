@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Column;
 
 @Entity
 @Table(name = "inventory")
@@ -15,6 +16,8 @@ public class Inventory {
     private Long id;
 
     private String sku;
+    @Column(name = "product_id")
+    private Long productId;
     private Integer quantity;
     private Integer reservedQuantity;
 
@@ -25,6 +28,14 @@ public class Inventory {
         this.sku = sku;
         this.quantity = quantity;
         this.reservedQuantity = reservedQuantity;
+    }
+
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
     }
 
     public Long getId() {

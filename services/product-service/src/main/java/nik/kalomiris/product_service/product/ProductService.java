@@ -112,7 +112,7 @@ public class ProductService {
         Product savedProduct = productRepository.save(product);
 
     // Send a message to RabbitMQ
-    rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_PRODUCT_CREATED, new ProductCreatedEvent(savedProduct.getSku()));
+    rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_PRODUCT_CREATED, new ProductCreatedEvent(savedProduct.getId(), savedProduct.getSku()));
 
         // Publish a log event about the created product. Ignore logging failures.
         try {
