@@ -21,6 +21,7 @@ public class ProductEventListener {
     @RabbitListener(queues = RabbitMQConfig.PRODUCT_CREATED_QUEUE_NAME)
     public void handleProductCreatedEvent(ProductCreatedEvent productEvent) {
         logger.info("Received product created event for SKU: {}", productEvent.getSku());
-        inventoryService.createInventoryRecord(productEvent.getSku());
+        // Create inventory record with the same ID as the product so order-service productId maps to inventory id.
+        inventoryService.createInventoryRecord(productEvent.getProductId(), productEvent.getSku());
     }
 }

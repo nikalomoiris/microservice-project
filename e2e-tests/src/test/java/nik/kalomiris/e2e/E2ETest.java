@@ -57,7 +57,7 @@ public class E2ETest {
 
     @Test
     public void createProduct_setInventory_placeOrder_andCommit() throws Exception {
-        // 1) Create a category (product API requires categoryIds non-empty)
+        // 1) Create a category via product-service REST API
         String productHost;
         int productPort;
         if (USE_EXTERNAL_COMPOSE) {
@@ -69,74 +69,82 @@ public class E2ETest {
         }
         String productBase = "http://" + productHost + ":" + productPort + "/api";
 
-        // Create category directly in productsdb (id=1) so tests are idempotent
-        String productsJdbcForCategory;
+        // create category
+        String categoryJson = "{\"name\":\"e2e-cat\",\"description\":\"e2e test category\"}";
+        RequestBody catBody = RequestBody.create(categoryJson, MediaType.get("application/json"));
+        Request catReq = new Request.Builder().url(productBase + "/categories").post(catBody).build();
+        long categoryId;
+        try (Response r = HTTP.newCall(catReq).execute()) {
+            if (r.isSuccessful()) {
+                JsonNode cat = MAPPER.readTree(r.body().bytes());
+                categoryId = cat.get("id").asLong();
+            } else {
+                // If category already exists, find it via GET /api/categories
+                Request listReq = new Request.Builder().url(productBase + "/categories").get().build();
+                try (Response lr = HTTP.newCall(listReq).execute()) {
+                    assertTrue(lr.isSuccessful(), "list categories");
+                    JsonNode arr = MAPPER.readTree(lr.body().bytes());
+                    long found = -1;
+                    for (JsonNode node : arr) {
+                        if ("e2e-cat".equals(node.get("name").asText())) {
+                            found = node.get("id").asLong();
+                            break;
+                        }
+                    }
+                    assertTrue(found != -1, "found existing category");
+                    categoryId = found;
+                }
+            }
+        }
+
+        // 2) Create product via product-service REST API (product-service will publish ProductCreatedEvent)
+        String createProductJson = "{\"name\":\"E2E Product\",\"description\":\"created by e2e test\",\"price\":12.34,\"categoryIds\":[" + categoryId + "]}";
+        RequestBody prodBody = RequestBody.create(createProductJson, MediaType.get("application/json"));
+        Request prodReq = new Request.Builder().url(productBase + "/products").post(prodBody).build();
+        long productId;
+        String sku;
+        try (Response r = HTTP.newCall(prodReq).execute()) {
+            assertEquals(201, r.code(), "product created");
+            JsonNode prod = MAPPER.readTree(r.body().bytes());
+            productId = prod.get("id").asLong();
+            sku = prod.get("sku").asText();
+        }
+
+        // Prepare inventory service base URL (used for polling and subsequent calls)
+        String invHostForSet;
+        int invPortForSet;
         if (USE_EXTERNAL_COMPOSE) {
-            productsJdbcForCategory = "jdbc:postgresql://localhost:5432/productsdb";
+            invHostForSet = "localhost";
+            invPortForSet = 8083;
         } else {
-            productsJdbcForCategory = "jdbc:postgresql://" + environment.getServiceHost("postgres-service", 5432) + ":" + environment.getServicePort("postgres-service", 5432) + "/productsdb";
+            invHostForSet = environment.getServiceHost("inventory-service", 8083);
+            invPortForSet = environment.getServicePort("inventory-service", 8083);
         }
-        try (Connection c = DriverManager.getConnection(productsJdbcForCategory, "postgres", "postgres")) {
-            String upsertCat = "INSERT INTO categories (id, name, description) VALUES (?, ?, ?) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description";
-            try (PreparedStatement ps = c.prepareStatement(upsertCat)) {
-                ps.setLong(1, 1L);
-                ps.setString(2, "e2e-cat");
-                ps.setString(3, "e2e test category");
-                ps.executeUpdate();
-            }
-        }
+        String invSetBase = "http://" + invHostForSet + ":" + invPortForSet + "/api";
 
-        // 2) Create product directly in productsdb (avoid product-service RabbitMQ serialization error)
-        long productId = 9999L;
-        String sku = "E2E-SKU-" + productId;
-        String productsJdbc;
-        if (USE_EXTERNAL_COMPOSE) {
-            productsJdbc = "jdbc:postgresql://localhost:5432/productsdb";
-        } else {
-            productsJdbc = "jdbc:postgresql://" + environment.getServiceHost("postgres-service", 5432) + ":" + environment.getServicePort("postgres-service", 5432) + "/productsdb";
-        }
-        try (Connection c = DriverManager.getConnection(productsJdbc, "postgres", "postgres")) {
-            String insertProduct = "INSERT INTO products (id, description, name, price, sku) VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET description = EXCLUDED.description, name = EXCLUDED.name, price = EXCLUDED.price, sku = EXCLUDED.sku";
-            try (PreparedStatement ps = c.prepareStatement(insertProduct)) {
-                ps.setLong(1, productId);
-                ps.setString(2, "created by e2e test");
-                ps.setString(3, "E2E Product");
-                ps.setBigDecimal(4, new java.math.BigDecimal("12.34"));
-                ps.setString(5, sku);
-                ps.executeUpdate();
+        // 3) Wait for inventory-service to consume the product-created event and create inventory record.
+        // Poll GET /api/inventory/{sku} until it's present (timeout 30s) instead of a fixed sleep. No fallback — be strict.
+        String invCheckUrl = invSetBase + "/inventory/" + sku;
+        boolean inventoryReady = false;
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < 30_000) {
+            Request invCheckReq = new Request.Builder().url(invCheckUrl).get().build();
+            try (Response ir = HTTP.newCall(invCheckReq).execute()) {
+                if (ir.isSuccessful()) {
+                    inventoryReady = true;
+                    break;
+                }
+            } catch (Exception e) {
+                // ignore transient network errors while waiting for the event to be processed
             }
-
-            // link product to category id 1
-            String insertLink = "INSERT INTO product_categories (product_id, category_id) VALUES (?, ?) ON CONFLICT DO NOTHING";
-            try (PreparedStatement ps2 = c.prepareStatement(insertLink)) {
-                ps2.setLong(1, productId);
-                ps2.setLong(2, 1L);
-                ps2.executeUpdate();
-            }
+            Thread.sleep(500);
         }
+        assertTrue(inventoryReady, "inventory record created by event listener within timeout");
 
-        // 3) Wait a bit for inventory-service to consume the product-created event
-        Thread.sleep(2000);
-
-        // 4) Set inventory in postgres directly so productId maps to inventory.id for test repeatability
-        String pgHost;
-        int pgPort;
-        if (USE_EXTERNAL_COMPOSE) {
-            pgHost = "localhost";
-            pgPort = 5432;
-        } else {
-            pgHost = environment.getServiceHost("postgres-service", 5432);
-            pgPort = environment.getServicePort("postgres-service", 5432);
-        }
-        String jdbc = "jdbc:postgresql://" + pgHost + ":" + pgPort + "/inventorydb";
-        try (Connection c = DriverManager.getConnection(jdbc, "postgres", "postgres")) {
-            String upsert = "INSERT INTO inventory (id, sku, quantity, reserved_quantity) VALUES (?, ?, ?, 0) ON CONFLICT (id) DO UPDATE SET sku = EXCLUDED.sku, quantity = EXCLUDED.quantity, reserved_quantity = EXCLUDED.reserved_quantity";
-            try (PreparedStatement ps = c.prepareStatement(upsert)) {
-                ps.setLong(1, productId);
-                ps.setString(2, sku);
-                ps.setInt(3, 100); // set initial inventory to 100
-                ps.executeUpdate();
-            }
+        RequestBody setBody = RequestBody.create("100", MediaType.get("application/json"));
+        Request setReq = new Request.Builder().url(invSetBase + "/inventory/" + productId + "/quantity").post(setBody).build();
+        try (Response r = HTTP.newCall(setReq).execute()) {
+            assertTrue(r.isSuccessful(), "set inventory quantity");
         }
 
         // Reserve the required quantity so commitStock can succeed when the order is processed.
@@ -177,30 +185,27 @@ public class E2ETest {
             assertEquals(201, r.code(), "order created");
         }
 
-        // 6) Wait for inventory-service to commit stock (order processing via RabbitMQ)
-        Thread.sleep(2000);
-
-        // 7) Verify inventory decreased
-        String invHost;
-        int invPort;
-        if (USE_EXTERNAL_COMPOSE) {
-            invHost = "localhost";
-            invPort = 8083;
-        } else {
-            invHost = environment.getServiceHost("inventory-service", 8083);
-            invPort = environment.getServicePort("inventory-service", 8083);
+        // 6) Poll for inventory change as order is processed (timeout 30s)
+        String invBase = invSetBase; // reuse computed inventory base
+        boolean commitObserved = false;
+        start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < 30_000) {
+            Request invReq = new Request.Builder().url(invBase + "/inventory/" + sku).get().build();
+            try (Response r = HTTP.newCall(invReq).execute()) {
+                if (r.isSuccessful()) {
+                    JsonNode inv = MAPPER.readTree(r.body().bytes());
+                    int quantity = inv.get("quantity").asInt();
+                    int reserved = inv.get("reservedQuantity").asInt();
+                    if (quantity == 98 && reserved == 0) {
+                        commitObserved = true;
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                // swallow and retry until timeout
+            }
+            Thread.sleep(500);
         }
-        String invBase = "http://" + invHost + ":" + invPort + "/api";
-        Request invReq = new Request.Builder().url(invBase + "/inventory/" + sku).get().build();
-        try (Response r = HTTP.newCall(invReq).execute()) {
-            assertTrue(r.isSuccessful(), "get inventory");
-            JsonNode inv = MAPPER.readTree(r.body().bytes());
-            int quantity = inv.get("quantity").asInt();
-            int reserved = inv.get("reservedQuantity").asInt();
-            // We set 100 and ordered 2; commit should reduce quantity to 98
-            assertEquals(98, quantity);
-            // reservedQuantity should be 0 after commit
-            assertEquals(0, reserved);
-        }
+        assertTrue(commitObserved, "inventory commit observed within timeout (quantity=98, reserved=0)");
     }
 }
