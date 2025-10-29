@@ -8,7 +8,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 IMPORT_RE = re.compile(r'^\s*import\s+([^;]+);', re.MULTILINE)
 PACKAGE_RE = re.compile(r'^\s*package\s+[^;]+;', re.MULTILINE)
 BLOCK_COMMENT_RE = re.compile(r'/\*.*?\*/', re.DOTALL)
-LINE_COMMENT_RE = re.compile(r'//.*?$', re.MULTILINE)
+LINE_COMMENT_RE = re.compile(r'//.*$', re.MULTILINE)
 STRING_RE = re.compile(r'"(?:\\.|[^"\\])*"', re.DOTALL)
 
 candidates = []
