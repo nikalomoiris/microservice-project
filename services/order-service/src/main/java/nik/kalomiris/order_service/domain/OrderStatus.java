@@ -5,6 +5,7 @@ public enum OrderStatus {
     RESERVED,
     PARTIALLY_RESERVED,
     CONFIRMED,
+    COMMITTED,
     SHIPPED,
     COMPLETED,
     RESERVATION_FAILED,
