@@ -92,12 +92,42 @@ public class InventoryEventListener {
         }
     }
 
+    @RabbitListener(queues = RabbitMQConfig.ORDER_INVENTORY_COMMITTED_QUEUE)
+    @Transactional
+    public void handleInventoryCommitted(InventoryReservedEvent event) {
+        logger.info("Received InventoryCommittedEvent for order {}", event.getOrderNumber());
+        Optional<Order> orderOpt = orderRepository.findByOrderNumber(event.getOrderNumber());
+        if (orderOpt.isEmpty()) {
+            logger.warn("Order not found: {}", event.getOrderNumber());
+            return;
+        }
+        Order order = orderOpt.get();
+        // Idempotency: if already CONFIRMED, SHIPPED or COMPLETED, ignore
+        if (order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.COMPLETED) {
+            logger.info("Order {} already in status {}, ignoring event", order.getOrderNumber(), order.getStatus());
+            return;
+        }
+        // Only allow RESERVED -> CONFIRMED
+        if (canTransitionTo(order.getStatus(), OrderStatus.CONFIRMED)) {
+            RetryUtils.retryOnOptimisticLock(() -> {
+                Order toUpdate = orderRepository.findById(order.getId()).orElseThrow();
+                toUpdate.setStatus(OrderStatus.CONFIRMED);
+                orderRepository.save(toUpdate);
+                return null;
+            }, 3, 100);
+            logger.info("Order {} status updated to CONFIRMED", order.getOrderNumber());
+        } else {
+            logger.warn("Unexpected state transition for order {}: {} - CONFIRMED", order.getOrderNumber(), order.getStatus());
+        }
+    }
+
     private boolean canTransitionTo(OrderStatus current, OrderStatus target) {
         // Helper that encodes valid state transitions for the Order state machine.
         return switch (current) {
             case CREATED -> target == OrderStatus.RESERVED || target == OrderStatus.RESERVATION_FAILED || target == OrderStatus.PARTIALLY_RESERVED;
             case PARTIALLY_RESERVED -> target == OrderStatus.RESERVED || target == OrderStatus.RESERVATION_FAILED;
-            case RESERVED -> target == OrderStatus.SHIPPED || target == OrderStatus.COMPLETED;
+            case RESERVED -> target == OrderStatus.CONFIRMED || target == OrderStatus.CANCELLED;
+            case CONFIRMED -> target == OrderStatus.SHIPPED || target == OrderStatus.COMPLETED;
             default -> false;
         };
     }

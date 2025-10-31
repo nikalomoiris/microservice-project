@@ -122,5 +122,39 @@ public class OrderService {
     }
 
     // Function to handle order confirmation (not implemented yet)
+    public void confirmOrder(String orderNumber) {
+        /**
+         * Placeholder method to handle order confirmation logic.
+         */
+
+        Order order = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        OrderEvent event = new OrderEvent(
+            order.getOrderNumber(),
+            order.getOrderNumber(),
+            Instant.now(),
+            order.getOrderLineItems()
+                .stream()
+                .map(li -> new nik.kalomiris.events.dtos.OrderLineItem(li.getProductId(), li.getQuantity()))
+                .toList()
+        );
+
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_ORDER_CONFIRMED, event);
     
+        try {
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Order confirmation processing started")
+                    .level("INFO")
+                    .service("order-service")
+                    .logger("nik.kalomiris.order_service.service.OrderService")
+                    .metadata(Map.of("orderNumber", order.getOrderNumber()))
+                    .build();
+            logPublisher.publish(logMessage);
+        } catch (Exception e) {
+            // ignore logging failures
+
+        }
+    }
+
 }
