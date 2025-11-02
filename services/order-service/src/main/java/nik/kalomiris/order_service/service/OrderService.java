@@ -9,10 +9,13 @@ import nik.kalomiris.logging_client.LogMessage;
 import nik.kalomiris.order_service.config.RabbitMQConfig;
 import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderLineItem;
+import nik.kalomiris.order_service.domain.OrderStatus;
 import nik.kalomiris.events.dtos.OrderEvent;
 import nik.kalomiris.order_service.dto.OrderRequest;
 import nik.kalomiris.order_service.mapper.OrderMapper;
 import nik.kalomiris.order_service.repository.OrderRepository;
+import nik.kalomiris.order_service.util.OrderStatusTransitions;
+
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -120,4 +123,44 @@ public class OrderService {
             // ignore logging failures
         }
     }
+
+    public void confirmOrder(String orderNumber) {
+
+        Order order = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        if (OrderStatusTransitions.canTransitionTo(order.getStatus(), OrderStatus.CONFIRMED)) {
+            order.setStatus(OrderStatus.CONFIRMED);
+            orderRepository.save(order);
+        } else {
+            throw new IllegalStateException("Cannot transition order to CONFIRMED from status: " + order.getStatus());
+        }
+
+        OrderEvent event = new OrderEvent(
+            order.getOrderNumber(),
+            order.getOrderNumber(),
+            Instant.now(),
+            order.getOrderLineItems()
+                .stream()
+                .map(li -> new nik.kalomiris.events.dtos.OrderLineItem(li.getProductId(), li.getQuantity()))
+                .toList()
+        );
+
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_ORDER_CONFIRMED, event);
+    
+        try {
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Order confirmation received")
+                    .level("INFO")
+                    .service("order-service")
+                    .logger("nik.kalomiris.order_service.service.OrderService")
+                    .metadata(Map.of("orderNumber", order.getOrderNumber()))
+                    .build();
+            logPublisher.publish(logMessage);
+        } catch (Exception e) {
+            // ignore logging failures
+
+        }
+    }
+
 }

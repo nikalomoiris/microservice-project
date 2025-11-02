@@ -1,0 +1,82 @@
+{
+  "candidates": [
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "com.fasterxml.jackson.databind.JsonNode",
+      "simple": "JsonNode"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "org.junit.jupiter.api.AfterAll",
+      "simple": "AfterAll"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "org.junit.jupiter.api.BeforeAll",
+      "simple": "BeforeAll"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "org.junit.jupiter.api.Test",
+      "simple": "Test"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "org.testcontainers.containers.wait.strategy.Wait",
+      "simple": "Wait"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "java.io.File",
+      "simple": "File"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "java.math.BigDecimal",
+      "simple": "BigDecimal"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "java.sql.Connection",
+      "simple": "Connection"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "java.sql.DriverManager",
+      "simple": "DriverManager"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "java.sql.PreparedStatement",
+      "simple": "PreparedStatement"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java",
+      "import": "java.util.List",
+      "simple": "List"
+    },
+    {
+      "file": "/Users/heliconmuse/Coding/microservices-project/services/inventory-service/src/main/java/nik/kalomiris/inventory_service/config/RabbitMQConfig.java",
+      "import": "org.springframework.amqp.support.converter.MessageConverter",
+      "simple": "MessageConverter"
+    }
+  ],
+  "by_file": {
+    "/Users/heliconmuse/Coding/microservices-project/e2e-tests/src/test/java/nik/kalomiris/e2e/E2ETest.java": [
+      "com.fasterxml.jackson.databind.JsonNode",
+      "org.junit.jupiter.api.AfterAll",
+      "org.junit.jupiter.api.BeforeAll",
+      "org.junit.jupiter.api.Test",
+      "org.testcontainers.containers.wait.strategy.Wait",
+      "java.io.File",
+      "java.math.BigDecimal",
+      "java.sql.Connection",
+      "java.sql.DriverManager",
+      "java.sql.PreparedStatement",
+      "java.util.List"
+    ],
+    "/Users/heliconmuse/Coding/microservices-project/services/inventory-service/src/main/java/nik/kalomiris/inventory_service/config/RabbitMQConfig.java": [
+      "org.springframework.amqp.support.converter.MessageConverter"
+    ]
+  }
+}

@@ -3,7 +3,7 @@ package nik.kalomiris.events.dtos;
 import java.time.Instant;
 import java.util.List;
 
-public class InventoryReservedEvent {
+public class InventorySuccessEvent {
     /**
      * Event indicating inventory was successfully reserved/committed for an order.
      * Consumers use this to progress order state (e.g., move to RESERVED).
@@ -13,9 +13,9 @@ public class InventoryReservedEvent {
     private Instant timestamp;
     private List<OrderLineItem> lineItems;
 
-    public InventoryReservedEvent() {}
+    public InventorySuccessEvent() {}
 
-    public InventoryReservedEvent(String orderNumber, String correlationId, Instant timestamp, List<OrderLineItem> lineItems) {
+    public InventorySuccessEvent(String orderNumber, String correlationId, Instant timestamp, List<OrderLineItem> lineItems) {
         this.orderNumber = orderNumber;
         this.correlationId = correlationId;
         this.timestamp = timestamp;

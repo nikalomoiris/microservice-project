@@ -81,20 +81,13 @@ public class InventoryService {
                 logger.info("Inventory saveAndFlush completed for sku={} productId={}", sku, productId);
 
                 // publish informational logs without impacting business logic
-        safePublish(new LogMessage.Builder()
-            .message("Inventory record created (saveAndFlush)")
-            .level("INFO")
-            .service(SERVICE_NAME)
-            .logger(LOGGER_NAME)
-            .metadata(Map.of("sku", sku, PRODUCT_ID_KEY, String.valueOf(productId)))
-            .build());
-
+        // Publish a single informational log containing both sku and productId
         safePublish(new LogMessage.Builder()
             .message("Inventory record created")
             .level("INFO")
             .service(SERVICE_NAME)
             .logger(LOGGER_NAME)
-            .metadata(Map.of("sku", sku))
+            .metadata(Map.of("sku", sku, PRODUCT_ID_KEY, String.valueOf(productId)))
             .build());
             } catch (ObjectOptimisticLockingFailureException e) {
                 // Another transaction created/updated the row concurrently. Treat
