@@ -19,9 +19,12 @@ public class RabbitMQConfig {
 
     public static final String ORDER_EXCHANGE_NAME = "order-exchange";
     public static final String ORDER_CREATED_QUEUE_NAME = "order.created.inventory.queue";
+    public static final String ORDER_CONFIRMED_QUEUE_NAME = "order.confirmed.inventory.queue";
     public static final String ROUTING_KEY_ORDER_CREATED = "order.created";
+    public static final String ROUTING_KEY_ORDER_CONFIRMED = "order.confirmed";
     public static final String ROUTING_KEY_ORDER_INVENTORY_RESERVED = "order.inventory.reserved";
     public static final String ROUTING_KEY_ORDER_INVENTORY_RESERVATION_FAILED = "order.inventory.reservation_failed";
+    public static final String ROUTING_KEY_ORDER_INVENTORY_COMMITTED = "order.inventory.committed";
 
     @Bean
     public TopicExchange productExchange() {
@@ -50,8 +53,18 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue orderConfirmedInventoryQueue() {
+        return new Queue(ORDER_CONFIRMED_QUEUE_NAME, true);
+    }
+
+    @Bean
     public Binding orderBinding(Queue orderCreatedInventoryQueue, TopicExchange orderExchange) {
         return BindingBuilder.bind(orderCreatedInventoryQueue).to(orderExchange).with(ROUTING_KEY_ORDER_CREATED);
+    }
+
+    @Bean
+    public Binding orderConfirmedBinding(Queue orderConfirmedInventoryQueue, TopicExchange orderExchange) {
+        return BindingBuilder.bind(orderConfirmedInventoryQueue).to(orderExchange).with(ROUTING_KEY_ORDER_CONFIRMED);
     }
 
     @Bean

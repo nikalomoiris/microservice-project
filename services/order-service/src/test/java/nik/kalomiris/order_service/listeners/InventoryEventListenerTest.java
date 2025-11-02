@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderStatus;
-import nik.kalomiris.events.dtos.InventoryReservedEvent;
+import nik.kalomiris.events.dtos.InventorySuccessEvent;
 import nik.kalomiris.events.dtos.InventoryReservationFailedEvent;
 import nik.kalomiris.order_service.repository.OrderRepository;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ class InventoryEventListenerTest {
         when(repo.findByOrderNumber("order-1")).thenReturn(Optional.of(order));
         when(repo.findById(1L)).thenReturn(Optional.of(order));
 
-        InventoryReservedEvent event = new InventoryReservedEvent();
+        InventorySuccessEvent event = new InventorySuccessEvent();
         event.setOrderNumber("order-1");
 
         listener.handleInventoryReserved(event);

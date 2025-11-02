@@ -12,9 +12,10 @@ import nik.kalomiris.order_service.config.RabbitMQConfig;
 import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderStatus;
 import nik.kalomiris.events.dtos.InventoryReservationFailedEvent;
-import nik.kalomiris.events.dtos.InventoryReservedEvent;
+import nik.kalomiris.events.dtos.InventorySuccessEvent;
 import nik.kalomiris.order_service.repository.OrderRepository;
 import nik.kalomiris.order_service.util.RetryUtils;
+import nik.kalomiris.order_service.util.OrderStatusTransitions;
 
 @Component
 public class InventoryEventListener {
@@ -36,7 +37,7 @@ public class InventoryEventListener {
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_INVENTORY_RESERVED_QUEUE)
     @Transactional
-    public void handleInventoryReserved(InventoryReservedEvent event) {
+    public void handleInventoryReserved(InventorySuccessEvent event) {
         logger.info("Received InventoryReservedEvent for order {}", event.getOrderNumber());
         Optional<Order> orderOpt = orderRepository.findByOrderNumber(event.getOrderNumber());
         if (orderOpt.isEmpty()) {
@@ -50,7 +51,7 @@ public class InventoryEventListener {
             return;
         }
         // Only allow CREATED -> RESERVED
-        if (canTransitionTo(order.getStatus(), OrderStatus.RESERVED)) {
+        if (OrderStatusTransitions.canTransitionTo(order.getStatus(), OrderStatus.RESERVED)) {
             RetryUtils.retryOnOptimisticLock(() -> {
                 Order toUpdate = orderRepository.findById(order.getId()).orElseThrow();
                 toUpdate.setStatus(OrderStatus.RESERVED);
@@ -79,7 +80,7 @@ public class InventoryEventListener {
             return;
         }
         // Only allow CREATED -> RESERVATION_FAILED (or PARTIALLY_RESERVED -> RESERVATION_FAILED)
-        if (canTransitionTo(order.getStatus(), OrderStatus.RESERVATION_FAILED)) {
+        if (OrderStatusTransitions.canTransitionTo(order.getStatus(), OrderStatus.RESERVATION_FAILED)) {
             RetryUtils.retryOnOptimisticLock(() -> {
                 Order toUpdate = orderRepository.findById(order.getId()).orElseThrow();
                 toUpdate.setStatus(OrderStatus.RESERVATION_FAILED);
@@ -92,14 +93,36 @@ public class InventoryEventListener {
         }
     }
 
-    private boolean canTransitionTo(OrderStatus current, OrderStatus target) {
-        // Helper that encodes valid state transitions for the Order state machine.
-        return switch (current) {
-            case CREATED -> target == OrderStatus.RESERVED || target == OrderStatus.RESERVATION_FAILED || target == OrderStatus.PARTIALLY_RESERVED;
-            case PARTIALLY_RESERVED -> target == OrderStatus.RESERVED || target == OrderStatus.RESERVATION_FAILED;
-            case RESERVED -> target == OrderStatus.SHIPPED || target == OrderStatus.COMPLETED;
-            default -> false;
-        };
+    @RabbitListener(queues = RabbitMQConfig.ORDER_INVENTORY_COMMITTED_QUEUE)
+    @Transactional
+    public void handleInventoryCommitted(InventorySuccessEvent event) {
+        logger.info("Received InventoryCommittedEvent for order {}", event.getOrderNumber());
+        Optional<Order> orderOpt = orderRepository.findByOrderNumber(event.getOrderNumber());
+        if (orderOpt.isEmpty()) {
+            logger.warn("Order not found: {}", event.getOrderNumber());
+            return;
+        }
+        Order order = orderOpt.get();
+        // Idempotency: if already CONFIRMED, SHIPPED or COMPLETED, ignore
+        if (order.getStatus() == OrderStatus.COMMITTED
+            || order.getStatus() == OrderStatus.CONFIRMED 
+            || order.getStatus() == OrderStatus.SHIPPED 
+            || order.getStatus() == OrderStatus.COMPLETED) {
+            logger.info("Order {} already in status {}, ignoring event", order.getOrderNumber(), order.getStatus());
+            return;
+        }
+        // Only allow RESERVED -> COMMITTED
+        if (OrderStatusTransitions.canTransitionTo(order.getStatus(), OrderStatus.COMMITTED)) {
+            RetryUtils.retryOnOptimisticLock(() -> {
+                Order toUpdate = orderRepository.findById(order.getId()).orElseThrow();
+                toUpdate.setStatus(OrderStatus.COMMITTED);
+                orderRepository.save(toUpdate);
+                return null;
+            }, 3, 100);
+            logger.info("Order {} status updated to COMMITTED", order.getOrderNumber());
+        } else {
+            logger.warn("Unexpected state transition for order {}: {} - COMMITTED", order.getOrderNumber(), order.getStatus());
+        }
     }
     
 }
