@@ -124,7 +124,6 @@ public class OrderService {
         }
     }
 
-    // Function to handle order confirmation (not implemented yet)
     public void confirmOrder(String orderNumber) {
 
         Order order = orderRepository.findByOrderNumber(orderNumber)
