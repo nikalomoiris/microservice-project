@@ -105,7 +105,7 @@ public class InventoryEventListener {
         Order order = orderOpt.get();
         // Idempotency: if already CONFIRMED, SHIPPED or COMPLETED, ignore
         if (order.getStatus() == OrderStatus.COMMITTED
-            ||order.getStatus() == OrderStatus.CONFIRMED 
+            || order.getStatus() == OrderStatus.CONFIRMED 
             || order.getStatus() == OrderStatus.SHIPPED 
             || order.getStatus() == OrderStatus.COMPLETED) {
             logger.info("Order {} already in status {}, ignoring event", order.getOrderNumber(), order.getStatus());
