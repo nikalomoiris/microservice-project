@@ -111,7 +111,7 @@ public class InventoryEventListener {
             logger.info("Order {} already in status {}, ignoring event", order.getOrderNumber(), order.getStatus());
             return;
         }
-        // Only allow CONFIRMED -> COMMITTED
+        // Only allow RESERVED -> COMMITTED
         if (OrderStatusTransitions.canTransitionTo(order.getStatus(), OrderStatus.COMMITTED)) {
             RetryUtils.retryOnOptimisticLock(() -> {
                 Order toUpdate = orderRepository.findById(order.getId()).orElseThrow();
