@@ -126,9 +126,6 @@ public class OrderService {
 
     // Function to handle order confirmation (not implemented yet)
     public void confirmOrder(String orderNumber) {
-        /**
-         * Placeholder method to handle order confirmation logic.
-         */
 
         Order order = orderRepository.findByOrderNumber(orderNumber)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));

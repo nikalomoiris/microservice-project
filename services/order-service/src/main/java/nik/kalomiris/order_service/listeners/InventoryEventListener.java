@@ -12,7 +12,7 @@ import nik.kalomiris.order_service.config.RabbitMQConfig;
 import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderStatus;
 import nik.kalomiris.events.dtos.InventoryReservationFailedEvent;
-import nik.kalomiris.events.dtos.InventoryReservedEvent;
+import nik.kalomiris.events.dtos.InventorySuccessEvent;
 import nik.kalomiris.order_service.repository.OrderRepository;
 import nik.kalomiris.order_service.util.RetryUtils;
 import nik.kalomiris.order_service.util.OrderStatusTransitions;
@@ -37,7 +37,7 @@ public class InventoryEventListener {
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_INVENTORY_RESERVED_QUEUE)
     @Transactional
-    public void handleInventoryReserved(InventoryReservedEvent event) {
+    public void handleInventoryReserved(InventorySuccessEvent event) {
         logger.info("Received InventoryReservedEvent for order {}", event.getOrderNumber());
         Optional<Order> orderOpt = orderRepository.findByOrderNumber(event.getOrderNumber());
         if (orderOpt.isEmpty()) {
@@ -95,7 +95,7 @@ public class InventoryEventListener {
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_INVENTORY_COMMITTED_QUEUE)
     @Transactional
-    public void handleInventoryCommitted(InventoryReservedEvent event) {
+    public void handleInventoryCommitted(InventorySuccessEvent event) {
         logger.info("Received InventoryCommittedEvent for order {}", event.getOrderNumber());
         Optional<Order> orderOpt = orderRepository.findByOrderNumber(event.getOrderNumber());
         if (orderOpt.isEmpty()) {
