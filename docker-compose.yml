@@ -140,5 +140,21 @@ services:
     depends_on:
       - kafka-service
 
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: ./services/frontend/Dockerfile
+    container_name: frontend
+    environment:
+      - NODE_ENV=development
+      - API_BASE_URL=http://product-service:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+
 volumes:
   postgres_data:

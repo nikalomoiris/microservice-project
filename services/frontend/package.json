@@ -1,0 +1,15 @@
+{
+  "name": "microservices-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter apps/web dev",
+    "build": "pnpm --filter apps/web build",
+    "start": "pnpm --filter apps/web start",
+    "generate:api": "node ./scripts/generate-api-client.js || echo 'generate:api placeholder'"
+  }
+}

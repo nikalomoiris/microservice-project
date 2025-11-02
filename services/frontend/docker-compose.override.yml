@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: ./services/frontend/Dockerfile
+    container_name: frontend-dev
+    environment:
+      - NODE_ENV=development
+      - API_BASE_URL=http://product-service:8080
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./services/frontend:/app
+      - /app/node_modules
+    command: pnpm dev
+    depends_on:
+      - product-service
+      - order-service
