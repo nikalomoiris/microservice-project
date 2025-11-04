@@ -17,13 +17,14 @@ public class ProductDTO {
     private String sku;
     private List<Long> categoryIds;
     private List<Long> imagesIds;
+    private List<String> imageUrls; // Image URLs for display
 
     public ProductDTO() {
     }
 
     public ProductDTO(Long id, String name, 
             String description, double price, 
-            String sku, List<Long> categoryIds, List<Long> imagesIds) {
+            String sku, List<Long> categoryIds, List<Long> imagesIds, List<String> imageUrls) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -31,6 +32,7 @@ public class ProductDTO {
         this.sku = sku;
         this.categoryIds = categoryIds;
         this.imagesIds = imagesIds;
+        this.imageUrls = imageUrls;
     }
     public List<Long> getCategoryIds() {
         return categoryIds;
@@ -46,6 +48,14 @@ public class ProductDTO {
 
     public void setImagesIds(List<Long> imagesIds) {
         this.imagesIds = imagesIds;
+    }
+
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
     }
 
     public Long getId() {

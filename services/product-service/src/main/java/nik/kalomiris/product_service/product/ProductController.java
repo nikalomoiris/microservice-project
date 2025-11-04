@@ -18,6 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("api/products")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class ProductController {
     /**
      * REST API for product operations (create, read). Keep controllers thin
@@ -77,6 +78,7 @@ public class ProductController {
     }
 
     @PostMapping("/{id}/images")
+    @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
     public ResponseEntity<String> uploadProductImage(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file) {
