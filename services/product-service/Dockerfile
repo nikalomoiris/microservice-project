@@ -11,7 +11,7 @@ COPY services ./services
 # Run the build from the root
 RUN mvn -pl services/product-service -am package -DskipTests
 
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
