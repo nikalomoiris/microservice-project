@@ -9,7 +9,7 @@ COPY services ./services
 # Build only the logging-service module
 RUN mvn -pl services/logging-service -am package -DskipTests
 
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=build /app/services/logging-service/target/logging-service-0.0.1-SNAPSHOT.jar ./
 

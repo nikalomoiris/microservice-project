@@ -32,6 +32,8 @@ public class ProductMapper {
             product.getCategories().stream().map(Category::getId).toList();
         List<Long> imagesIds = product.getImages() == null ? List.of() :
             product.getImages().stream().map(Image::getId).toList();
+        List<String> imageUrls = product.getImages() == null ? List.of() :
+            product.getImages().stream().map(Image::getUrl).toList();
         return new ProductDTO(
                 product.getId(),
                 product.getName(),
@@ -39,7 +41,8 @@ public class ProductMapper {
                 product.getPrice(),
                 product.getSku(),
                 categoryIds,
-                imagesIds
+                imagesIds,
+                imageUrls
         );
     }
 
