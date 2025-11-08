@@ -17,7 +17,7 @@ This project contains the following microservices:
 
 To build and run this project, you will need:
 
-*   Java 17
+*   Java 21
 *   Maven
 *   Docker
 *   Docker Compose

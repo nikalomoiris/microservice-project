@@ -29,4 +29,11 @@ public class OrderController {
         orderService.createOrder(orderRequest);
         return "Order Created Successfully";
     }
+
+    @PostMapping("/confirm/{orderNumber}")
+    @ResponseStatus(HttpStatus.OK)
+    public String confirmOrder(@PathVariable String orderNumber) {
+        orderService.confirmOrder(orderNumber);
+        return "Order Confirmed Successfully";
+    }
 }
