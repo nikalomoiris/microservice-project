@@ -4,7 +4,7 @@
 Purpose: Give an AI coding agent the minimal, actionable knowledge to be productive in this monorepo. Keep edits small, preserve existing conventions, and point to concrete files/examples.
 
 1) Big picture (why and where)
-- Monorepo of Spring Boot microservices. Services live under `services/` and include: `product-service`, `inventory-service`, `order-service`, `review-service`, `logging-service`, and a `logging-client` library.
+- Monorepo of Spring Boot 3.5.7 microservices (Java 21). Services live under `services/` and include: `product-service`, `inventory-service`, `order-service`, `review-service`, `logging-service`, and a `logging-client` library.
 - Infra for local dev is provided in `docker-compose.yml` (Postgres, RabbitMQ, Zookeeper, Kafka). Services communicate via REST + RabbitMQ events; structured logs flow through Kafka.
 
 2) Key locations (start here)
@@ -51,7 +51,7 @@ Purpose: Give an AI coding agent the minimal, actionable knowledge to be product
 - Packaging: some services use package names with underscores (e.g., `nik.kalomiris.product_service`); follow existing package patterns and avoid global renames.
 - Events & contracts: keep event DTOs in `services/event-contracts` and update all consumers/producers together; follow the PR checklist (see `docs/PR_CHECKLIST.md`).
 - Idempotency: listeners must be idempotent (RabbitMQ redeliveries expected). When modifying listeners, add idempotency tests.
-- Logging: use `logging-client` library for structured logs to Kafka rather than ad-hoc console prints.
+- Logging: use `logging-client` library for structured logs to Kafka rather than ad-hoc console prints. Use the `LogMessage.Builder()` pattern for structured logs with metadata, tracing, and context (see `services/logging-client/STRUCTURED_LOGGING.md`).
 
 6) Common tasks for an agent (examples)
 - Add new event: update `services/event-contracts` → update producer (e.g., `order-service`) → update consumer(s) (`inventory-service`) → update `docs/message-flow.md` and `docs/service-topology.md` → update `docker-compose` only if you add infra.
