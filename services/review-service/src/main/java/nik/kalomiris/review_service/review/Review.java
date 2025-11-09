@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 
 @Entity
 @Table(name = "reviews")
@@ -22,6 +24,7 @@ public class Review {
     private String comment;
     private Integer upvotes = 0;
     private Integer downvotes = 0;
+    @Enumerated(EnumType.STRING)
     private ReviewStatus status = ReviewStatus.FOR_MODERATION;
 
     public Review() {
