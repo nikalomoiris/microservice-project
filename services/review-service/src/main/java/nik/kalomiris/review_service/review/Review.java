@@ -22,6 +22,7 @@ public class Review {
     private String comment;
     private Integer upvotes = 0;
     private Integer downvotes = 0;
+    private ReviewStatus status = ReviewStatus.FOR_MODERATION;
 
     public Review() {
     }
@@ -72,5 +73,13 @@ public class Review {
 
     public void setDownvotes(Integer downvotes) {
         this.downvotes = downvotes;
+    }
+
+    public ReviewStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ReviewStatus status) {
+        this.status = status;
     }
 }
