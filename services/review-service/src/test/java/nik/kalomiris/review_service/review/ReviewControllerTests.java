@@ -38,7 +38,7 @@ class ReviewControllerTests {
         review.setRating(5);
         review.setComment("Great product!");
 
-    Mockito.when(reviewService.createReview(Mockito.any(Review.class))).thenReturn(review);
+        Mockito.when(reviewService.createReview(Mockito.any(Review.class))).thenReturn(review);
 
         mockMvc.perform(post("/api/reviews")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -64,7 +64,7 @@ class ReviewControllerTests {
         review2.setRating(4);
         review2.setComment("Good product.");
 
-    Mockito.when(reviewService.getAllReviews()).thenReturn(Arrays.asList(review1, review2));
+        Mockito.when(reviewService.getAllReviews()).thenReturn(Arrays.asList(review1, review2));
 
         mockMvc.perform(get("/api/reviews"))
                 .andExpect(status().isOk())
@@ -81,7 +81,7 @@ class ReviewControllerTests {
         review.setRating(5);
         review.setComment("Great product!");
 
-    Mockito.when(reviewService.getReviewById(1L)).thenReturn(Optional.of(review));
+        Mockito.when(reviewService.getReviewById(1L)).thenReturn(Optional.of(review));
 
         mockMvc.perform(get("/api/reviews/1"))
                 .andExpect(status().isOk())
@@ -96,14 +96,17 @@ class ReviewControllerTests {
         review1.setProductId(1L);
         review1.setRating(5);
         review1.setComment("Great product!");
+        review1.setStatus(ReviewStatus.APPROVED);
 
         Review review2 = new Review();
         review2.setId(2L);
         review2.setProductId(1L);
         review2.setRating(4);
         review2.setComment("Good product.");
+        review2.setStatus(ReviewStatus.APPROVED);
 
-    Mockito.when(reviewService.getReviewsByProductId(1L)).thenReturn(Arrays.asList(review1, review2));
+        Mockito.when(reviewService.getReviewsByProductIdAndStatus(1L, ReviewStatus.APPROVED))
+                .thenReturn(Arrays.asList(review1, review2));
 
         mockMvc.perform(get("/api/reviews/product/1"))
                 .andExpect(status().isOk())

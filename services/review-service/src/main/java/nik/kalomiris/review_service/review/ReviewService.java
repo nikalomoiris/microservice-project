@@ -23,6 +23,7 @@ public class ReviewService {
     private static final String REVIEW_SERVICE_LOGGER = "nik.kalomiris.review_service.review.ReviewService";
     private static final String REVIEW_ID = "reviewId";
     private static final String PRODUCT_ID = "productId";
+    private static final String REVIEW_NOT_FOUND = "Review not found with id: ";
 
     private final ReviewRepository reviewRepository;
     private final LogPublisher logPublisher;
@@ -41,10 +42,9 @@ public class ReviewService {
 
         // Fetch existing reviews for the same product to compare against (excluding
         // this one)
-        List<Review> existingReviews = reviewRepository.findByProductId(review.getProductId())
-                .stream()
-                .filter(r -> !r.getId().equals(savedReview.getId()))
-                .toList();
+        List<Review> existingReviews = reviewRepository.findByProductIdAndIdNot(
+                savedReview.getProductId(),
+                savedReview.getId());
 
         // Evaluate the saved review against existing ones
         EvaluationResult evaluationResult = evaluationService.evaluate(savedReview, existingReviews);
@@ -94,9 +94,54 @@ public class ReviewService {
         return reviewRepository.findByProductId(productId);
     }
 
+    public List<Review> getReviewsByProductIdAndStatus(Long productId, ReviewStatus status) {
+        if (status == null) {
+            // Default to APPROVED only for backward compatibility
+            return reviewRepository.findByProductIdAndStatus(productId, ReviewStatus.APPROVED);
+        }
+        return reviewRepository.findByProductIdAndStatus(productId, status);
+    }
+
+    public List<Review> getReviewsByStatus(ReviewStatus status) {
+        return reviewRepository.findByStatus(status);
+    }
+
+    public Review updateReviewStatus(Long reviewId, ReviewStatus newStatus, String moderatorId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException(REVIEW_NOT_FOUND + reviewId));
+
+        ReviewStatus oldStatus = review.getStatus();
+        review.setStatus(newStatus);
+        review.setModeratedBy(moderatorId);
+        review.setModeratedAt(java.time.Instant.now());
+
+        Review updatedReview = reviewRepository.save(review);
+
+        // Log status change
+        try {
+            LogMessage logMessage = new LogMessage.Builder()
+                    .message("Review status updated")
+                    .level("INFO")
+                    .service(SERVICE_NAME)
+                    .logger(REVIEW_SERVICE_LOGGER)
+                    .metadata(Map.of(
+                            REVIEW_ID, reviewId.toString(),
+                            PRODUCT_ID, review.getProductId().toString(),
+                            "oldStatus", oldStatus.toString(),
+                            "newStatus", newStatus.toString(),
+                            "moderatedBy", moderatorId))
+                    .build();
+            logPublisher.publish(logMessage);
+        } catch (Exception e) {
+            // ignore logging failures
+        }
+
+        return updatedReview;
+    }
+
     public Review addUpVote(Long reviewId) {
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new RuntimeException("Review not found with id: " + reviewId));
+                .orElseThrow(() -> new RuntimeException(REVIEW_NOT_FOUND + reviewId));
         if (review.getUpvotes() == null) {
             review.setUpvotes(0);
         }
@@ -122,7 +167,7 @@ public class ReviewService {
 
     public Review addDownVote(Long reviewId) {
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new RuntimeException("Review not found with id: " + reviewId));
+                .orElseThrow(() -> new RuntimeException(REVIEW_NOT_FOUND + reviewId));
         if (review.getDownvotes() == null) {
             review.setDownvotes(0);
         }

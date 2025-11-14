@@ -57,7 +57,7 @@ class ReviewServiceTests {
                 .status(ReviewStatus.APPROVED)
                 .build();
 
-        when(reviewRepository.findByProductId(1L)).thenReturn(Collections.emptyList());
+        when(reviewRepository.findByProductIdAndIdNot(1L, 1L)).thenReturn(Collections.emptyList());
         when(evaluationService.evaluate(any(Review.class), anyList())).thenReturn(evaluationResult);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review saved = invocation.getArgument(0);
@@ -76,9 +76,9 @@ class ReviewServiceTests {
         assertNotNull(result.getEvaluationReason());
         assertNotNull(result.getEvaluatedAt());
 
-        verify(reviewRepository).findByProductId(1L);
+        verify(reviewRepository).findByProductIdAndIdNot(1L, 1L);
         verify(evaluationService).evaluate(any(Review.class), anyList());
-        verify(reviewRepository).save(newReview);
+        verify(reviewRepository, times(2)).save(any(Review.class));
     }
 
     @Test
@@ -97,7 +97,7 @@ class ReviewServiceTests {
                 .status(ReviewStatus.APPROVED)
                 .build();
 
-        when(reviewRepository.findByProductId(1L)).thenReturn(List.of(existingReview));
+        when(reviewRepository.findByProductIdAndIdNot(1L, 2L)).thenReturn(List.of(existingReview));
         when(evaluationService.evaluate(any(Review.class), anyList())).thenReturn(evaluationResult);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review saved = invocation.getArgument(0);
@@ -132,7 +132,7 @@ class ReviewServiceTests {
                 .status(ReviewStatus.FOR_MODERATION)
                 .build();
 
-        when(reviewRepository.findByProductId(1L)).thenReturn(List.of(existingReview));
+        when(reviewRepository.findByProductIdAndIdNot(1L, 2L)).thenReturn(List.of(existingReview));
         when(evaluationService.evaluate(any(Review.class), anyList())).thenReturn(evaluationResult);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review saved = invocation.getArgument(0);
@@ -167,7 +167,7 @@ class ReviewServiceTests {
                 .status(ReviewStatus.REJECTED)
                 .build();
 
-        when(reviewRepository.findByProductId(1L)).thenReturn(List.of(existingReview));
+        when(reviewRepository.findByProductIdAndIdNot(1L, 2L)).thenReturn(List.of(existingReview));
         when(evaluationService.evaluate(any(Review.class), anyList())).thenReturn(evaluationResult);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review saved = invocation.getArgument(0);
@@ -207,7 +207,7 @@ class ReviewServiceTests {
                 .status(ReviewStatus.APPROVED)
                 .build();
 
-        when(reviewRepository.findByProductId(1L)).thenReturn(existingReviews);
+        when(reviewRepository.findByProductIdAndIdNot(1L, 4L)).thenReturn(existingReviews);
         when(evaluationService.evaluate(any(Review.class), anyList())).thenReturn(evaluationResult);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review saved = invocation.getArgument(0);
@@ -219,7 +219,7 @@ class ReviewServiceTests {
         Review result = reviewService.createReview(newReview);
 
         // Then: should evaluate against all existing reviews
-        verify(reviewRepository).findByProductId(1L);
+        verify(reviewRepository).findByProductIdAndIdNot(1L, 4L);
         verify(evaluationService).evaluate(any(Review.class), argThat(list -> list != null && list.size() == 3));
         assertEquals(ReviewStatus.APPROVED, result.getStatus());
     }
@@ -240,7 +240,7 @@ class ReviewServiceTests {
                 .status(ReviewStatus.APPROVED)
                 .build();
 
-        when(reviewRepository.findByProductId(1L)).thenReturn(Collections.emptyList());
+        when(reviewRepository.findByProductIdAndIdNot(1L, 1L)).thenReturn(Collections.emptyList());
         when(evaluationService.evaluate(any(Review.class), anyList())).thenReturn(evaluationResult);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review saved = invocation.getArgument(0);
@@ -274,7 +274,7 @@ class ReviewServiceTests {
                 .status(ReviewStatus.FOR_MODERATION)
                 .build();
 
-        when(reviewRepository.findByProductId(1L)).thenReturn(Collections.emptyList());
+        when(reviewRepository.findByProductIdAndIdNot(1L, 1L)).thenReturn(Collections.emptyList());
         when(evaluationService.evaluate(any(Review.class), anyList())).thenReturn(evaluationResult);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review saved = invocation.getArgument(0);
