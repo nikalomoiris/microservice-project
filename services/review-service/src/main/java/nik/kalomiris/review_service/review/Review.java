@@ -27,7 +27,14 @@ public class Review {
     @Enumerated(EnumType.STRING)
     private ReviewStatus status = ReviewStatus.FOR_MODERATION;
 
+    // Evaluation metadata fields
+    private Double similarityScore;
+    private Long mostSimilarReviewId;
+    private String evaluationReason;
+    private java.time.Instant evaluatedAt;
+
     public Review() {
+        // Default constructor required by JPA
     }
 
     public Long getId() {
@@ -84,5 +91,37 @@ public class Review {
 
     public void setStatus(ReviewStatus status) {
         this.status = status;
+    }
+
+    public Double getSimilarityScore() {
+        return similarityScore;
+    }
+
+    public void setSimilarityScore(Double similarityScore) {
+        this.similarityScore = similarityScore;
+    }
+
+    public Long getMostSimilarReviewId() {
+        return mostSimilarReviewId;
+    }
+
+    public void setMostSimilarReviewId(Long mostSimilarReviewId) {
+        this.mostSimilarReviewId = mostSimilarReviewId;
+    }
+
+    public String getEvaluationReason() {
+        return evaluationReason;
+    }
+
+    public void setEvaluationReason(String evaluationReason) {
+        this.evaluationReason = evaluationReason;
+    }
+
+    public java.time.Instant getEvaluatedAt() {
+        return evaluatedAt;
+    }
+
+    public void setEvaluatedAt(java.time.Instant evaluatedAt) {
+        this.evaluatedAt = evaluatedAt;
     }
 }
