@@ -33,6 +33,10 @@ public class Review {
     private String evaluationReason;
     private java.time.Instant evaluatedAt;
 
+    // Moderation audit fields
+    private String moderatedBy;
+    private java.time.Instant moderatedAt;
+
     public Review() {
         // Default constructor required by JPA
     }
@@ -123,5 +127,21 @@ public class Review {
 
     public void setEvaluatedAt(java.time.Instant evaluatedAt) {
         this.evaluatedAt = evaluatedAt;
+    }
+
+    public String getModeratedBy() {
+        return moderatedBy;
+    }
+
+    public void setModeratedBy(String moderatedBy) {
+        this.moderatedBy = moderatedBy;
+    }
+
+    public java.time.Instant getModeratedAt() {
+        return moderatedAt;
+    }
+
+    public void setModeratedAt(java.time.Instant moderatedAt) {
+        this.moderatedAt = moderatedAt;
     }
 }
