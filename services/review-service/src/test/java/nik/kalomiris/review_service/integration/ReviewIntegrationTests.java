@@ -83,7 +83,7 @@ class ReviewIntegrationTests {
         reviewRepository.save(existing);
 
         Review duplicate = createReview(1L, 5, "Amazing product, best purchase ever!");
-        
+
         MvcResult result = mockMvc.perform(post("/api/reviews")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(duplicate)))
@@ -104,7 +104,7 @@ class ReviewIntegrationTests {
         reviewRepository.save(existing);
 
         Review similar = createReview(1L, 5, "Great product, I highly recommend this item!");
-        
+
         MvcResult result = mockMvc.perform(post("/api/reviews")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(similar)))
@@ -144,7 +144,7 @@ class ReviewIntegrationTests {
     void getReviewsByProductIdAndStatus_shouldFilter() throws Exception {
         Review approved = createReview(1L, 5, "Approved review");
         approved.setStatus(ReviewStatus.APPROVED);
-        
+
         Review moderation = createReview(1L, 4, "Moderation review");
         moderation.setStatus(ReviewStatus.FOR_MODERATION);
 
@@ -167,7 +167,7 @@ class ReviewIntegrationTests {
         reviewRepository.save(productA);
 
         Review productB = createReview(2L, 5, "Amazing product, best ever!");
-        
+
         MvcResult result = mockMvc.perform(post("/api/reviews")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(productB)))
