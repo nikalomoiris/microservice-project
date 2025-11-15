@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 
 @Entity
 @Table(name = "reviews")
@@ -22,8 +24,21 @@ public class Review {
     private String comment;
     private Integer upvotes = 0;
     private Integer downvotes = 0;
+    @Enumerated(EnumType.STRING)
+    private ReviewStatus status = ReviewStatus.FOR_MODERATION;
+
+    // Evaluation metadata fields
+    private Double similarityScore;
+    private Long mostSimilarReviewId;
+    private String evaluationReason;
+    private java.time.Instant evaluatedAt;
+
+    // Moderation audit fields
+    private String moderatedBy;
+    private java.time.Instant moderatedAt;
 
     public Review() {
+        // Default constructor required by JPA
     }
 
     public Long getId() {
@@ -72,5 +87,61 @@ public class Review {
 
     public void setDownvotes(Integer downvotes) {
         this.downvotes = downvotes;
+    }
+
+    public ReviewStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ReviewStatus status) {
+        this.status = status;
+    }
+
+    public Double getSimilarityScore() {
+        return similarityScore;
+    }
+
+    public void setSimilarityScore(Double similarityScore) {
+        this.similarityScore = similarityScore;
+    }
+
+    public Long getMostSimilarReviewId() {
+        return mostSimilarReviewId;
+    }
+
+    public void setMostSimilarReviewId(Long mostSimilarReviewId) {
+        this.mostSimilarReviewId = mostSimilarReviewId;
+    }
+
+    public String getEvaluationReason() {
+        return evaluationReason;
+    }
+
+    public void setEvaluationReason(String evaluationReason) {
+        this.evaluationReason = evaluationReason;
+    }
+
+    public java.time.Instant getEvaluatedAt() {
+        return evaluatedAt;
+    }
+
+    public void setEvaluatedAt(java.time.Instant evaluatedAt) {
+        this.evaluatedAt = evaluatedAt;
+    }
+
+    public String getModeratedBy() {
+        return moderatedBy;
+    }
+
+    public void setModeratedBy(String moderatedBy) {
+        this.moderatedBy = moderatedBy;
+    }
+
+    public java.time.Instant getModeratedAt() {
+        return moderatedAt;
+    }
+
+    public void setModeratedAt(java.time.Instant moderatedAt) {
+        this.moderatedAt = moderatedAt;
     }
 }

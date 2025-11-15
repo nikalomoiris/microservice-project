@@ -1,5 +1,8 @@
 # microservices-project
 
+![CI (Unit)](https://github.com/nikalomoiris/microservice-project/actions/workflows/ci.yml/badge.svg?branch=main)
+![E2E Tests](https://github.com/nikalomoiris/microservice-project/actions/workflows/e2e.yml/badge.svg?branch=main)
+
 This project is a monorepo for a collection of microservices. It includes services for managing products, inventory, reviews, orders, and centralized logging.
 
 ## Modules

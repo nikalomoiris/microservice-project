@@ -8,7 +8,6 @@ import java.util.List;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-
 @RestController
 @RequestMapping("/api/reviews")
 public class ReviewController {
@@ -42,8 +41,30 @@ public class ReviewController {
     }
 
     @GetMapping("/product/{productId}")
-    public List<Review> getReviewsByProductId(@PathVariable Long productId) {
-        return reviewService.getReviewsByProductId(productId);
+    public List<Review> getReviewsByProductId(
+            @PathVariable Long productId,
+            @RequestParam(required = false) ReviewStatus status) {
+        if (status != null) {
+            return reviewService.getReviewsByProductIdAndStatus(productId, status);
+        }
+        // Default: return only APPROVED reviews for backward compatibility
+        return reviewService.getReviewsByProductIdAndStatus(productId, ReviewStatus.APPROVED);
+    }
+
+    @GetMapping("/status/{status}")
+    public List<Review> getReviewsByStatus(@PathVariable ReviewStatus status) {
+        return reviewService.getReviewsByStatus(status);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Review> updateReviewStatus(
+            @PathVariable Long id,
+            @RequestBody StatusUpdateRequest request) {
+        Review updatedReview = reviewService.updateReviewStatus(
+                id,
+                request.getStatus(),
+                request.getModeratorId());
+        return new ResponseEntity<>(updatedReview, HttpStatus.OK);
     }
 
     @PostMapping("/{id}/upvote")
