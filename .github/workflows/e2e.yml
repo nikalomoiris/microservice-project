@@ -45,50 +45,36 @@ jobs:
         run: |
           set -euo pipefail
           
-          # Wait for HTTP services to actually respond with valid HTTP
-          wait_for_http() {
-            local url=$1; local timeout=${2:-600}; local start=$(date +%s)
-            echo "Waiting for $url (timeout ${timeout}s)..."
-            while true; do
-              if curl -sf "$url" > /dev/null 2>&1; then
-                echo "$url is ready"; break
-              fi
-              now=$(date +%s)
-              if (( now - start > timeout )); then
-                echo "Timeout waiting for $url"
-                echo "Last curl attempt:"
-                curl -v "$url" || true
-                exit 1
-              fi
-              sleep 3
-            done
-          }
-          
-          # Wait for TCP ports (non-HTTP services)
+          # Wait for TCP ports (simpler and more reliable)
           wait_for_port() {
-            local host=$1; local port=$2; local timeout=${3:-600}; local start=$(date +%s)
+            local host=$1; local port=$2; local timeout=${3:-300}; local start=$(date +%s)
             echo "Waiting for $host:$port (timeout ${timeout}s)..."
-            while true; do
-              if nc -z -w1 "$host" "$port" 2>/dev/null; then
-                echo "$host:$port is ready"; break
-              fi
+            while ! nc -z -w1 "$host" "$port" 2>/dev/null; do
               now=$(date +%s)
               if (( now - start > timeout )); then
-                echo "Timeout waiting for $host:$port"; exit 1
+                echo "ERROR: Timeout waiting for $host:$port"
+                docker compose ps
+                docker compose logs --tail=50
+                exit 1
               fi
               sleep 2
             done
+            echo "✓ $host:$port is ready"
           }
           
-          # Wait for infrastructure first
+          # Wait for infrastructure
           wait_for_port localhost 5432 300   # postgres
           wait_for_port localhost 5672 300   # rabbitmq
           wait_for_port localhost 9092 300   # kafka
           
-          # Then wait for HTTP services with actual health checks
-          wait_for_http "http://localhost:8080/api/categories" 600   # product-service
-          wait_for_http "http://localhost:8083/actuator/health" 600  # inventory-service
-          wait_for_http "http://localhost:8081/actuator/health" 600  # order-service
+          # Wait for services
+          wait_for_port localhost 8080 300   # product-service
+          wait_for_port localhost 8083 300   # inventory-service  
+          wait_for_port localhost 8081 300   # order-service
+          
+          # Give Spring Boot a few extra seconds to fully initialize
+          echo "Ports are open, waiting 10s for Spring Boot initialization..."
+          sleep 10
           
           echo "All services are ready!"
 
