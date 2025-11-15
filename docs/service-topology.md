@@ -39,6 +39,9 @@ Infrastructure (from `docker-compose.yml`):
 - RabbitMQ (`rabbitmq-service`) — AMQP 5672, management UI 15672
 - Zookeeper (`zookeeper-service`) — 2181
 - Kafka (`kafka-service`) — 9092
+- OpenSearch (`opensearch`) — 9200 (local dev, security disabled)
+- OpenSearch Dashboards (`opensearch-dashboards`) — 5601
+- Kafka Connect (`kafka-connect`) — 8083 (mapped to host 8085)
 
 ---
 
@@ -97,6 +100,7 @@ flowchart LR
   ReviewSvc -->|logs via logging-client| KafkaBroker
 
   KafkaBroker -->|consume service logs| LoggingSvc
+  KafkaBroker -->|sink to OpenSearch via Kafka Connect| OpenSearch[(OpenSearch)]
 ```
 
 Notes:
