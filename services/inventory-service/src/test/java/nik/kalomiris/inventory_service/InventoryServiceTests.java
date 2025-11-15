@@ -1,9 +1,12 @@
 package nik.kalomiris.inventory_service;
 
+import nik.kalomiris.inventory_service.config.TestRabbitMQConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import nik.kalomiris.inventory_service.exceptions.InsufficientStockException;
@@ -12,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
+@ActiveProfiles("test")
+@Import(TestRabbitMQConfig.class)
 @Transactional
 public class InventoryServiceTests {
 
