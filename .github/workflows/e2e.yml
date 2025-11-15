@@ -1,0 +1,122 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-tests:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
+
+      - name: Verify Docker and Compose availability
+        run: |
+          docker --version
+          docker compose version
+
+      - name: Start docker-compose (build images)
+        run: |
+          docker compose -f docker-compose.yml up -d --build
+
+      - name: Wait for services to be ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          # Wait for TCP ports (simpler and more reliable)
+          wait_for_port() {
+            local host=$1; local port=$2; local timeout=${3:-300}; local start=$(date +%s)
+            echo "Waiting for $host:$port (timeout ${timeout}s)..."
+            while ! nc -z -w1 "$host" "$port" 2>/dev/null; do
+              now=$(date +%s)
+              if (( now - start > timeout )); then
+                echo "ERROR: Timeout waiting for $host:$port"
+                docker compose ps
+                docker compose logs --tail=50
+                exit 1
+              fi
+              sleep 2
+            done
+            echo "✓ $host:$port is ready"
+          }
+          
+          # Wait for infrastructure
+          wait_for_port localhost 5432 300   # postgres
+          wait_for_port localhost 5672 300   # rabbitmq
+          wait_for_port localhost 9092 300   # kafka
+          
+          # Wait for services
+          wait_for_port localhost 8080 300   # product-service
+          wait_for_port localhost 8083 300   # inventory-service  
+          wait_for_port localhost 8081 300   # order-service
+          
+          # Give Spring Boot a few extra seconds to fully initialize
+          echo "Ports are open, waiting 10s for Spring Boot initialization..."
+          sleep 10
+          
+          echo "All services are ready!"
+
+      - name: Run e2e tests (use existing compose)
+        env:
+          SKIP_COMPOSE: "true"
+        run: mvn -f e2e-tests/pom.xml -B test
+
+      - name: Collect docker-compose logs on failure
+        if: failure()
+        run: |
+          mkdir -p ci-artifacts
+          echo "Collecting Docker diagnostics..."
+          docker --version > ci-artifacts/docker-version.txt || true
+          docker info > ci-artifacts/docker-info.txt || true
+          docker compose version > ci-artifacts/docker-compose-version.txt || true
+          docker compose -f docker-compose.yml ps --all > ci-artifacts/compose-ps.txt || true
+          docker compose -f docker-compose.yml config > ci-artifacts/compose-config.yml || true
+          docker compose -f docker-compose.yml logs --no-color > ci-artifacts/compose-logs.txt || true
+          for svc in postgres-service rabbitmq-service zookeeper-service kafka-service product-service order-service review-service inventory-service logging-service; do \
+            docker compose -f docker-compose.yml logs --no-color "$svc" > "ci-artifacts/${svc}.log" || true; \
+          done
+
+      - name: Upload docker logs artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-docker-logs
+          path: ci-artifacts/**
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload e2e test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-reports
+          path: e2e-tests/target/surefire-reports/**
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Teardown docker-compose
+        if: always()
+        run: |
+          docker compose -f docker-compose.yml down -v || true

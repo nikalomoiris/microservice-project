@@ -36,7 +36,8 @@ public class InventoryService {
     private static final String PRODUCT_ID_KEY = "productId";
     private final ConcurrentHashMap<String, Object> createLocks = new ConcurrentHashMap<>();
 
-    public InventoryService(InventoryRepository inventoryRepository, InventoryMapper inventoryMapper, LogPublisher logPublisher) {
+    public InventoryService(InventoryRepository inventoryRepository, InventoryMapper inventoryMapper,
+            LogPublisher logPublisher) {
         this.inventoryRepository = inventoryRepository;
         this.inventoryMapper = inventoryMapper;
         this.logPublisher = logPublisher;
@@ -52,10 +53,10 @@ public class InventoryService {
      *
      * Notes:
      * - Designed to be safe when the same ProductCreatedEvent is processed
-     *   multiple times (checks by productId and sku).
+     * multiple times (checks by productId and sku).
      * - Uses a lightweight in-process lock per SKU to reduce concurrent
-     *   create races, and catches optimistic locking exceptions which are
-     *   treated as benign (another transaction created the row).
+     * create races, and catches optimistic locking exceptions which are
+     * treated as benign (another transaction created the row).
      */
     public void createInventoryRecord(Long productId, String sku) {
         // Idempotent creation: first check by productId, then by SKU. This reduces
@@ -67,7 +68,8 @@ public class InventoryService {
         // Lightweight container-local lock per SKU to reduce concurrent create races
         Object lock = createLocks.computeIfAbsent(sku, k -> new Object());
         synchronized (lock) {
-            if (inventoryRepository.findByProductId(productId).isPresent() || inventoryRepository.findBySku(sku).isPresent()) {
+            if (inventoryRepository.findByProductId(productId).isPresent()
+                    || inventoryRepository.findBySku(sku).isPresent()) {
                 return;
             }
 
@@ -81,35 +83,35 @@ public class InventoryService {
                 logger.info("Inventory saveAndFlush completed for sku={} productId={}", sku, productId);
 
                 // publish informational logs without impacting business logic
-        // Publish a single informational log containing both sku and productId
-        safePublish(new LogMessage.Builder()
-            .message("Inventory record created")
-            .level("INFO")
-            .service(SERVICE_NAME)
-            .logger(LOGGER_NAME)
-            .metadata(Map.of("sku", sku, PRODUCT_ID_KEY, String.valueOf(productId)))
-            .build());
+                // Publish a single informational log containing both sku and productId
+                safePublish(new LogMessage.Builder()
+                        .message("Inventory record created")
+                        .level("INFO")
+                        .service(SERVICE_NAME)
+                        .logger(LOGGER_NAME)
+                        .metadata(Map.of("sku", sku, PRODUCT_ID_KEY, String.valueOf(productId)))
+                        .build());
             } catch (ObjectOptimisticLockingFailureException e) {
                 // Another transaction created/updated the row concurrently. Treat
                 // this as a benign race and return; the inventory record exists now.
-        safePublish(new LogMessage.Builder()
-            .message("Inventory create raced with another transaction")
-            .level("WARN")
-            .service(SERVICE_NAME)
-            .logger(LOGGER_NAME)
-            .metadata(Map.of("sku", sku, PRODUCT_ID_KEY, String.valueOf(productId)))
-            .build());
+                safePublish(new LogMessage.Builder()
+                        .message("Inventory create raced with another transaction")
+                        .level("WARN")
+                        .service(SERVICE_NAME)
+                        .logger(LOGGER_NAME)
+                        .metadata(Map.of("sku", sku, PRODUCT_ID_KEY, String.valueOf(productId)))
+                        .build());
             } catch (Exception e) {
                 // Surface unexpected exceptions so we can debug event handling failures.
                 logger.error("Failed to create inventory record for sku={} productId={}", sku, productId, e);
                 try {
-            LogMessage logMessage = new LogMessage.Builder()
-                .message("Inventory create failed: " + e.getMessage())
-                .level("ERROR")
-                .service(SERVICE_NAME)
-                .logger(LOGGER_NAME)
-                .metadata(Map.of("sku", sku, PRODUCT_ID_KEY, String.valueOf(productId)))
-                .build();
+                    LogMessage logMessage = new LogMessage.Builder()
+                            .message("Inventory create failed: " + e.getMessage())
+                            .level("ERROR")
+                            .service(SERVICE_NAME)
+                            .logger(LOGGER_NAME)
+                            .metadata(Map.of("sku", sku, PRODUCT_ID_KEY, String.valueOf(productId)))
+                            .build();
                     safePublish(logMessage);
                 } catch (Exception ignored) {
                     // intentionally ignore logging failures; they shouldn't break creation
@@ -132,26 +134,25 @@ public class InventoryService {
             if (inventory.getQuantity() - inventory.getReservedQuantity() >= amountToReserver) {
                 inventory.setReservedQuantity(inventory.getReservedQuantity() + amountToReserver);
                 inventoryRepository.save(inventory);
-                
+
                 // Publish a log event about the stock reservation. Ignore logging failures.
                 try {
-            LogMessage logMessage = new LogMessage.Builder()
-                .message("Stock reserved")
-                .level("INFO")
-                .service(SERVICE_NAME)
-                .logger(LOGGER_NAME)
-                .metadata(Map.of(PRODUCT_ID_KEY, productId.toString(), "amountReserved", amountToReserver.toString()))
-                .build();
-            logPublisher.publish(logMessage);
+                    LogMessage logMessage = new LogMessage.Builder()
+                            .message("Stock reserved")
+                            .level("INFO")
+                            .service(SERVICE_NAME)
+                            .logger(LOGGER_NAME)
+                            .metadata(Map.of(PRODUCT_ID_KEY, productId.toString(), "amountReserved",
+                                    amountToReserver.toString()))
+                            .build();
+                    logPublisher.publish(logMessage);
                 } catch (Exception e) {
                     // ignore logging failures
                 }
+            } else {
+                throw new InsufficientStockException("Not enough stock to reserve");
             }
-            else { 
-                throw new InsufficientStockException("Not enough stock to reserve"); 
-            }
-        }
-        else {
+        } else {
             throw new InventoryNotFoundException("Inventory record not found for product ID: " + productId);
         }
     }
@@ -166,23 +167,22 @@ public class InventoryService {
 
                 // Publish a log event about the stock release. Ignore logging failures.
                 try {
-            LogMessage logMessage = new LogMessage.Builder()
-                .message("Stock released")
-                .level("INFO")
-                .service(SERVICE_NAME)
-                .logger(LOGGER_NAME)
-                .metadata(Map.of(PRODUCT_ID_KEY, productId.toString(), "amountReleased", amountToRelease.toString()))
-                .build();
-            logPublisher.publish(logMessage);
+                    LogMessage logMessage = new LogMessage.Builder()
+                            .message("Stock released")
+                            .level("INFO")
+                            .service(SERVICE_NAME)
+                            .logger(LOGGER_NAME)
+                            .metadata(Map.of(PRODUCT_ID_KEY, productId.toString(), "amountReleased",
+                                    amountToRelease.toString()))
+                            .build();
+                    logPublisher.publish(logMessage);
                 } catch (Exception e) {
                     // ignore logging failures
                 }
+            } else {
+                throw new InsufficientStockException("Not enough reserved stock to release");
             }
-            else { 
-                throw new InsufficientStockException("Not enough reserved stock to release"); 
-            }
-        }
-        else {
+        } else {
             throw new InventoryNotFoundException("Inventory record not found for product ID: " + productId);
         }
     }
@@ -198,23 +198,22 @@ public class InventoryService {
 
                 // Publish a log event about the stock commit. Ignore logging failures.
                 try {
-            LogMessage logMessage = new LogMessage.Builder()
-                .message("Stock committed")
-                .level("INFO")
-                .service(SERVICE_NAME)
-                .logger(LOGGER_NAME)
-                .metadata(Map.of(PRODUCT_ID_KEY, productId.toString(), "amountCommitted", amountToCommit.toString()))
-                .build();
-            logPublisher.publish(logMessage);
+                    LogMessage logMessage = new LogMessage.Builder()
+                            .message("Stock committed")
+                            .level("INFO")
+                            .service(SERVICE_NAME)
+                            .logger(LOGGER_NAME)
+                            .metadata(Map.of(PRODUCT_ID_KEY, productId.toString(), "amountCommitted",
+                                    amountToCommit.toString()))
+                            .build();
+                    logPublisher.publish(logMessage);
                 } catch (Exception e) {
                     // ignore logging failures
                 }
+            } else {
+                throw new InsufficientStockException("Not enough reserved stock to commit");
             }
-            else { 
-                throw new InsufficientStockException("Not enough reserved stock to commit"); 
-            }
-        }
-        else {
+        } else {
             throw new InventoryNotFoundException("Inventory record not found for product ID: " + productId);
         }
     }

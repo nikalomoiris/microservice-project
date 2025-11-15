@@ -1,9 +1,12 @@
 package nik.kalomiris.inventory_service;
 
+import nik.kalomiris.inventory_service.config.TestRabbitMQConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import nik.kalomiris.inventory_service.exceptions.InsufficientStockException;
@@ -12,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
+@ActiveProfiles("test")
+@Import(TestRabbitMQConfig.class)
 @Transactional
 public class InventoryServiceTests {
 
@@ -26,17 +31,17 @@ public class InventoryServiceTests {
     @BeforeEach
     void setUp() {
         inventoryRepository.deleteAll();
-    inventory = new Inventory("TEST-SKU", 100, 10);
-    inventory = inventoryRepository.save(inventory);
-    // ensure productId is populated for the newer productId-based lookups
-    inventory.setProductId(inventory.getId());
-    inventory = inventoryRepository.save(inventory);
+        inventory = new Inventory("TEST-SKU", 100, 10);
+        inventory = inventoryRepository.save(inventory);
+        // ensure productId is populated for the newer productId-based lookups
+        inventory.setProductId(inventory.getId());
+        inventory = inventoryRepository.save(inventory);
     }
 
     @Test
     void reserveStock_shouldIncreaseReservedQuantity_whenStockIsAvailable() {
-    // Act
-    inventoryService.reserveStock(inventory.getProductId(), 20);
+        // Act
+        inventoryService.reserveStock(inventory.getProductId(), 20);
 
         // Assert
         Inventory updatedInventory = inventoryRepository.findById(inventory.getId()).get();
@@ -55,8 +60,8 @@ public class InventoryServiceTests {
 
     @Test
     void releaseStock_shouldDecreaseReservedQuantity() {
-    // Act
-    inventoryService.releaseStock(inventory.getProductId(), 5);
+        // Act
+        inventoryService.releaseStock(inventory.getProductId(), 5);
 
         // Assert
         Inventory updatedInventory = inventoryRepository.findById(inventory.getId()).get();
@@ -74,8 +79,8 @@ public class InventoryServiceTests {
 
     @Test
     void commitStock_shouldDecreaseQuantityAndReservedQuantity() {
-    // Act
-    inventoryService.commitStock(inventory.getProductId(), 5);
+        // Act
+        inventoryService.commitStock(inventory.getProductId(), 5);
 
         // Assert
         Inventory updatedInventory = inventoryRepository.findById(inventory.getId()).get();

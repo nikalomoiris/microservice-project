@@ -16,12 +16,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import nik.kalomiris.product_service.config.TestMessagingConfig;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(TestMessagingConfig.class)
 public class ProductControllerIntegrationTests {
 
     @Autowired
@@ -77,42 +80,41 @@ public class ProductControllerIntegrationTests {
     @Test
     void shouldGetAllProducts() throws Exception {
         mockMvc
-            .perform(get("/api/products"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(3)));
+                .perform(get("/api/products"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(3)));
     }
 
     @Test
     void shouldGetAllProductsFilteredByCategory() throws Exception {
         mockMvc
-            .perform(get("/api/products?categoryName=Books"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(2)))
-            .andExpect(jsonPath("$[0].name").value("The Lord of the Rings"))
-            .andExpect(jsonPath("$[1].name").value("A Game of Thrones"));
+                .perform(get("/api/products?categoryName=Books"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].name").value("The Lord of the Rings"))
+                .andExpect(jsonPath("$[1].name").value("A Game of Thrones"));
     }
 
     @Test
     void shouldGetAllProductsSortedByPriceDescending() throws Exception {
         mockMvc
-            .perform(get("/api/products?sortBy=price&sortDir=desc"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(3)))
-            .andExpect(jsonPath("$[0].name").value("Laptop"))
-            .andExpect(jsonPath("$[1].name").value("The Lord of the Rings"))
-            .andExpect(jsonPath("$[2].name").value("A Game of Thrones"));
+                .perform(get("/api/products?sortBy=price&sortDir=desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(3)))
+                .andExpect(jsonPath("$[0].name").value("Laptop"))
+                .andExpect(jsonPath("$[1].name").value("The Lord of the Rings"))
+                .andExpect(jsonPath("$[2].name").value("A Game of Thrones"));
     }
 
     @Test
     void shouldGetAllProductsFilteredByCategoryAndSortedByName()
-        throws Exception {
+            throws Exception {
         mockMvc
-            .perform(
-                get("/api/products?categoryName=Books&sortBy=name&sortDir=asc")
-            )
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(2)))
-            .andExpect(jsonPath("$[0].name").value("A Game of Thrones"))
-            .andExpect(jsonPath("$[1].name").value("The Lord of the Rings"));
+                .perform(
+                        get("/api/products?categoryName=Books&sortBy=name&sortDir=asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].name").value("A Game of Thrones"))
+                .andExpect(jsonPath("$[1].name").value("The Lord of the Rings"));
     }
 }

@@ -1,9 +1,13 @@
 package nik.kalomiris.order_service.controller;
 
+import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.dto.OrderRequest;
+import nik.kalomiris.order_service.repository.OrderRepository;
 import nik.kalomiris.order_service.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -17,9 +21,11 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderRepository orderRepository;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, OrderRepository orderRepository) {
         this.orderService = orderService;
+        this.orderRepository = orderRepository;
     }
 
     @PostMapping
@@ -35,5 +41,11 @@ public class OrderController {
     public String confirmOrder(@PathVariable String orderNumber) {
         orderService.confirmOrder(orderNumber);
         return "Order Confirmed Successfully";
+    }
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll();
     }
 }

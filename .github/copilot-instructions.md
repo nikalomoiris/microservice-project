@@ -71,6 +71,7 @@ Purpose: Give an AI coding agent the minimal, actionable knowledge to be product
 - `CODEMAP.md` — quick summary of each service responsibilities
 - `docs/service-topology.md` — message flows, exchanges, routing keys
 - `docs/PR_CHECKLIST.md` — rollout & PR validation checklist for event-driven changes
+- `docs/REVIEW_EVALUATION_IMPLEMENTATION_PLAN.md` — comprehensive implementation plan for review similarity evaluation feature
 - `services/*/HELP.md` — service-specific developer notes (package name quirks, mvnw usage)
 
 10) Interaction style for PRs
@@ -78,7 +79,12 @@ Purpose: Give an AI coding agent the minimal, actionable knowledge to be product
   - Short summary and concrete files changed
   - Manual smoke test steps (curl commands) and expected flow
   - If events are changed, include sample JSON and deployment order per `docs/PR_CHECKLIST.md`
+- For planning/architecture work:
+  - Create comprehensive implementation plans in `docs/` (see `REVIEW_EVALUATION_IMPLEMENTATION_PLAN.md` as template)
+  - Link plans to GitHub issues for tracking (epic issues with phase breakdowns)
+  - Include: architecture diagrams, data models, API design, testing strategy, deployment plan, risk analysis
+  - Break implementation into phases with clear acceptance criteria and effort estimates
 
-If anything above is unclear or you want templates (PR body, migration checklist, test harness), tell me which and I'll add them as small, follow-up files.
+If anything above is unclear or you want templates (PR body, migration checklist, test harness, implementation plan), tell me which and I'll add them as small, follow-up files.
 
 -- End of instructions --
