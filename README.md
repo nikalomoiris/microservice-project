@@ -237,6 +237,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 Details, diagrams, and sample payloads:
 - `docs/service-topology.md`
 - `docs/message-flow.md`
+- `docs/PR_CHECKLIST.md` (event-driven changes, rollout plans, deployment order)
 
 Shared event DTOs live in `services/event-contracts` and must remain compatible across producers/consumers.
 
