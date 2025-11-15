@@ -10,9 +10,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  unit-tests:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - services/event-contracts
+          - services/logging-client
+          - services/product-service
+          - services/inventory-service
+          - services/order-service
+          - services/review-service
+          - services/logging-service
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,25 +33,21 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          cache: 'maven'
 
-      - name: Cache Maven repository
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-m2-
+      - name: Build (no tests) to warm cache
+        run: mvn -B -q -DskipTests -DskipITs install
 
-      - name: Build and run unit tests
-        run: mvn -T1C -B clean install
+      - name: Run unit tests for module
+        run: mvn -B -T1C -pl "${{ matrix.module }}" -am clean test -DskipITs
 
-      - name: Upload unit test reports
+      - name: Upload unit test reports (module)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-reports
+          name: unit-test-reports-${{ matrix.module }}
           path: |
-            **/target/surefire-reports/**
-            **/target/failsafe-reports/**
+            ${{ matrix.module }}/target/surefire-reports/**
+            ${{ matrix.module }}/target/failsafe-reports/**
           if-no-files-found: warn
           retention-days: 7
