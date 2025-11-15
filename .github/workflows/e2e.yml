@@ -44,6 +44,27 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          
+          # Wait for HTTP services to actually respond with valid HTTP
+          wait_for_http() {
+            local url=$1; local timeout=${2:-600}; local start=$(date +%s)
+            echo "Waiting for $url (timeout ${timeout}s)..."
+            while true; do
+              if curl -sf "$url" > /dev/null 2>&1; then
+                echo "$url is ready"; break
+              fi
+              now=$(date +%s)
+              if (( now - start > timeout )); then
+                echo "Timeout waiting for $url"
+                echo "Last curl attempt:"
+                curl -v "$url" || true
+                exit 1
+              fi
+              sleep 3
+            done
+          }
+          
+          # Wait for TCP ports (non-HTTP services)
           wait_for_port() {
             local host=$1; local port=$2; local timeout=${3:-600}; local start=$(date +%s)
             echo "Waiting for $host:$port (timeout ${timeout}s)..."
@@ -58,12 +79,18 @@ jobs:
               sleep 2
             done
           }
-          # Wait up to 10 minutes for all key services
-          wait_for_port localhost 8080 600   # product-service
-          wait_for_port localhost 8083 600   # inventory-service
-          wait_for_port localhost 8081 600   # order-service
-          wait_for_port localhost 5672 600   # rabbitmq
-          wait_for_port localhost 5432 600   # postgres
+          
+          # Wait for infrastructure first
+          wait_for_port localhost 5432 300   # postgres
+          wait_for_port localhost 5672 300   # rabbitmq
+          wait_for_port localhost 9092 300   # kafka
+          
+          # Then wait for HTTP services with actual health checks
+          wait_for_http "http://localhost:8080/api/categories" 600   # product-service
+          wait_for_http "http://localhost:8083/actuator/health" 600  # inventory-service
+          wait_for_http "http://localhost:8081/actuator/health" 600  # order-service
+          
+          echo "All services are ready!"
 
       - name: Run e2e tests (use existing compose)
         env:
