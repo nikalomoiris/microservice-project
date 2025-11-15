@@ -41,11 +41,15 @@ jobs:
       - name: Run unit tests for module
         run: mvn -B -T1C -pl "${{ matrix.module }}" -am clean test -DskipITs
 
+      - name: Set artifact name
+        id: artifact
+        run: echo "name=unit-test-reports-$(echo '${{ matrix.module }}' | tr '/' '-')" >> $GITHUB_OUTPUT
+
       - name: Upload unit test reports (module)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-reports-${{ matrix.module }}
+          name: ${{ steps.artifact.outputs.name }}
           path: |
             ${{ matrix.module }}/target/surefire-reports/**
             ${{ matrix.module }}/target/failsafe-reports/**
