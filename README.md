@@ -4,14 +4,14 @@
 [![E2E Tests](https://github.com/nikalomoiris/microservice-project/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/nikalomoiris/microservice-project/actions/workflows/e2e.yml)
 [![CodeQL](https://github.com/nikalomoiris/microservice-project/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/nikalomoiris/microservice-project/actions/workflows/codeql.yml)
 
-[![Issues](https://badgen.net/github/issues/nikalomoiris/microservice-project)](https://github.com/nikalomoiris/microservice-project/issues)
-[![PRs](https://badgen.net/github/prs/nikalomoiris/microservice-project)](https://github.com/nikalomoiris/microservice-project/pulls)
-[![Last Commit](https://badgen.net/github/last-commit/nikalomoiris/microservice-project)](https://github.com/nikalomoiris/microservice-project/commits/main)
-[![Docs](https://badgen.net/badge/Docs/service%20topology/blue)](docs/service-topology.md)
-![Java 21](https://badgen.net/badge/Java/21/007396)
-![Maven](https://badgen.net/badge/build/Maven/C71A36)
-[![Contributors](https://badgen.net/github/contributors/nikalomoiris/microservice-project)](https://github.com/nikalomoiris/microservice-project/graphs/contributors)
-[![License](https://badgen.net/github/license/nikalomoiris/microservice-project)](https://github.com/nikalomoiris/microservice-project)
+[![Issues](https://img.shields.io/github/issues/nikalomoiris/microservice-project?style=flat-square&cacheSeconds=21600)](https://github.com/nikalomoiris/microservice-project/issues)
+[![PRs](https://img.shields.io/github/issues-pr/nikalomoiris/microservice-project?style=flat-square&cacheSeconds=21600)](https://github.com/nikalomoiris/microservice-project/pulls)
+[![Last Commit](https://img.shields.io/github/last-commit/nikalomoiris/microservice-project?style=flat-square&cacheSeconds=21600)](https://github.com/nikalomoiris/microservice-project/commits/main)
+[![Docs](https://img.shields.io/badge/Docs-service%20topology-blue?style=flat-square)](docs/service-topology.md)
+![Java 21](https://img.shields.io/badge/Java-21-007396?logo=java&style=flat-square)
+![Maven](https://img.shields.io/badge/build-Maven-C71A36?logo=apache-maven&style=flat-square)
+[![Contributors](https://img.shields.io/github/contributors/nikalomoiris/microservice-project?style=flat-square&cacheSeconds=21600)](https://github.com/nikalomoiris/microservice-project/graphs/contributors)
+[![License](https://img.shields.io/github/license/nikalomoiris/microservice-project?style=flat-square&cacheSeconds=21600)](https://github.com/nikalomoiris/microservice-project)
 
 This project is a monorepo for a collection of microservices. It includes services for managing products, inventory, reviews, orders, and centralized logging.
 
