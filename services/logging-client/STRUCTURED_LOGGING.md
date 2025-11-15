@@ -118,6 +118,24 @@ Log messages are published to Kafka in the following JSON format:
 - The LogPublisher handles JSON serialization errors gracefully by sending a fallback message
 - All logging calls should be wrapped in try-catch blocks to prevent logging failures from affecting business logic
 
+## Indexing to OpenSearch (local dev)
+
+When running the local observability stack, logs from the Kafka topic `service-logs` are written to an OpenSearch index `service-logs` via Kafka Connect.
+
+- Expected index pattern: `service-logs*`
+- Time field: prefer `@timestamp` if present; otherwise `timestamp`
+- Mapping highlights:
+    - `level`, `service`, `logger`, `thread`, `traceId`, `spanId` are `keyword`
+    - `message` is `text`
+    - `metadata` is a dynamic object (arbitrary fields)
+
+Recommendations for producers:
+- Always include `service` and `level`.
+- Include `traceId`/`spanId` when available for cross-service correlation.
+- Put structured details into `metadata` (strings or numbers are best for filtering).
+
+See `ops/opensearch/index-templates/service-logs-template.json` and `ops/connectors/service-logs-opensearch.json` for the local pipeline configuration.
+
 ## Migration from String-based Logging
 
 Existing code using plain string messages will continue to work without modification. However, for better observability and log analysis, consider migrating to structured logging:
