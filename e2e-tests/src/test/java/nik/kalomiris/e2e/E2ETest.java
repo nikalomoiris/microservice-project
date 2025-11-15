@@ -122,10 +122,17 @@ public class E2ETest {
         assertTrue(inventoryReady, "inventory record created by event listener within timeout");
 
         setInventoryQuantity(productId, 100);
-        reserveInventory(productId, 2);
-        placeOrder(productId, sku, 2);
+        // Remove manual reservation - the order workflow handles this via RabbitMQ
+        String orderNumber = placeOrder(productId, sku, 2);
+        
+        // Wait for order to be reserved before confirming
+        boolean orderReserved = waitForOrderStatus(orderNumber, "RESERVED", Duration.ofSeconds(60));
+        assertTrue(orderReserved, "order status updated to RESERVED within timeout");
+        
+        // Confirm the order to trigger inventory commit
+        confirmOrder(orderNumber);
 
-        boolean commitObserved = pollForCommit(sku, 98, 0, Duration.ofSeconds(30));
+        boolean commitObserved = pollForCommit(sku, 98, 0, Duration.ofSeconds(60));
         assertTrue(commitObserved, "inventory commit observed within timeout (quantity=98, reserved=0)");
     }
 
@@ -209,16 +216,7 @@ public class E2ETest {
         }
     }
 
-    private void reserveInventory(long productId, int qty) throws Exception {
-        String invBase = serviceBase("inventory-service", 8083);
-        RequestBody reserveBody = RequestBody.create(String.valueOf(qty), MediaType.get(APPLICATION_JSON));
-        Request reserveReq = new Request.Builder().url(invBase + "/inventory/" + productId + "/reserver").post(reserveBody).build();
-        try (Response r = HTTP.newCall(reserveReq).execute()) {
-            assertTrue(r.isSuccessful(), "reserve inventory");
-        }
-    }
-
-    private void placeOrder(long productId, String sku, int qty) throws Exception {
+    private String placeOrder(long productId, String sku, int qty) throws Exception {
         String orderBase = serviceBase("order-service", 8081);
         JsonNode item = MAPPER.createObjectNode()
                 .putNull("id")
@@ -231,13 +229,61 @@ public class E2ETest {
         Request orderReq = new Request.Builder().url(orderBase + "/orders").post(orderBody).build();
         try (Response r = HTTP.newCall(orderReq).execute()) {
             assertEquals(201, r.code(), "order created");
+            // The endpoint returns plain text, so we need to fetch the latest order to get the order number
+            Thread.sleep(500); // Brief wait for the order to be committed
+            Request listReq = new Request.Builder().url(orderBase + "/orders").get().build();
+            try (Response listResp = HTTP.newCall(listReq).execute()) {
+                assertTrue(listResp.isSuccessful(), "list orders");
+                JsonNode orders = MAPPER.readTree(listResp.body().bytes());
+                // Get the last order (most recently created)
+                if (orders.isArray() && orders.size() > 0) {
+                    return orders.get(orders.size() - 1).get("orderNumber").asText();
+                }
+            }
+            throw new IllegalStateException("Failed to retrieve created order");
         }
+    }
+    
+    private void confirmOrder(String orderNumber) throws Exception {
+        String orderBase = serviceBase("order-service", 8081);
+        Request confirmReq = new Request.Builder().url(orderBase + "/orders/confirm/" + orderNumber).post(RequestBody.create("", null)).build();
+        try (Response r = HTTP.newCall(confirmReq).execute()) {
+            assertTrue(r.isSuccessful(), "order confirmed");
+        }
+    }
+    
+    private boolean waitForOrderStatus(String orderNumber, String expectedStatus, Duration timeout) throws Exception {
+        String orderBase = serviceBase("order-service", 8081);
+        String url = orderBase + "/orders";
+        long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            Request req = new Request.Builder().url(url).get().build();
+            try (Response r = HTTP.newCall(req).execute()) {
+                if (r.isSuccessful()) {
+                    JsonNode orders = MAPPER.readTree(r.body().bytes());
+                    for (JsonNode order : orders) {
+                        if (orderNumber.equals(order.get("orderNumber").asText())) {
+                            String status = order.get("status").asText();
+                            if (expectedStatus.equals(status)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+                // retry
+            }
+            Thread.sleep(POLL_INTERVAL_MS);
+        }
+        return false;
     }
 
     private boolean pollForCommit(String sku, int expectedQty, int expectedReserved, Duration timeout) throws Exception {
         String invBase = serviceBase("inventory-service", 8083);
         String url = invBase + INVENTORY_PATH + sku;
         long deadline = System.currentTimeMillis() + timeout.toMillis();
+        int lastQuantity = -1;
+        int lastReserved = -1;
         while (System.currentTimeMillis() < deadline) {
             Request req = new Request.Builder().url(url).get().build();
             try (Response r = HTTP.newCall(req).execute()) {
@@ -245,6 +291,13 @@ public class E2ETest {
                     JsonNode inv = MAPPER.readTree(r.body().bytes());
                     int quantity = inv.get("quantity").asInt();
                     int reserved = inv.get("reservedQuantity").asInt();
+                    // Log values if they changed
+                    if (quantity != lastQuantity || reserved != lastReserved) {
+                        System.out.println("Inventory state: quantity=" + quantity + ", reserved=" + reserved + 
+                                         " (expected: quantity=" + expectedQty + ", reserved=" + expectedReserved + ")");
+                        lastQuantity = quantity;
+                        lastReserved = reserved;
+                    }
                     if (quantity == expectedQty && reserved == expectedReserved) return true;
                 }
             } catch (Exception ignored) {
@@ -252,6 +305,7 @@ public class E2ETest {
             }
             Thread.sleep(POLL_INTERVAL_MS);
         }
+        System.out.println("Timeout! Final state: quantity=" + lastQuantity + ", reserved=" + lastReserved);
         return false;
     }
 }
