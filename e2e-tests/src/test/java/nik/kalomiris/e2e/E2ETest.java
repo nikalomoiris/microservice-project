@@ -48,7 +48,7 @@ public class E2ETest {
             log.info("SKIP_COMPOSE=true - skipping Testcontainers docker-compose startup and using localhost: mapped ports");
             return;
         }
-        File compose = new File("/Users/heliconmuse/Coding/microservices-project/docker-compose.yml");
+        File compose = resolveComposeFile();
 
         // Try to start compose using the host docker CLI (works with Docker Desktop on macOS/Apple Silicon).
         // This avoids Testcontainers pulling the docker/compose image (which is often amd64-only).
@@ -74,6 +74,32 @@ public class E2ETest {
                 .withExposedService("rabbitmq-service", 5672, Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(3)))
                 .withExposedService("kafka-service", 9092, Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(3)));
         environment.start();
+    }
+
+    private static File resolveComposeFile() {
+        // 1) Allow override via env var
+        String override = System.getenv("E2E_COMPOSE_FILE");
+        if (override != null && !override.isBlank()) {
+            File f = new File(override);
+            if (f.exists()) return f;
+        }
+
+        // 2) Try repo root if running from root
+        File root = new File("docker-compose.yml");
+        if (root.exists()) return root.getAbsoluteFile();
+
+        // 3) Try parent of module (common when running from e2e-tests/ directory)
+        File parent = new File("../docker-compose.yml");
+        if (parent.exists()) return parent.getAbsoluteFile();
+
+        // 4) Try GitHub Actions workspace
+        String gh = System.getenv("GITHUB_WORKSPACE");
+        if (gh != null && !gh.isBlank()) {
+            File ghFile = new File(gh, "docker-compose.yml");
+            if (ghFile.exists()) return ghFile.getAbsoluteFile();
+        }
+
+        throw new IllegalStateException("docker-compose.yml not found. Set E2E_COMPOSE_FILE or ensure file exists at project root.");
     }
 
     private static boolean tryStartLocalDockerCompose(File composeFile) {
