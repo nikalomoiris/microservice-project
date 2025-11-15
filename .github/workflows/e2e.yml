@@ -36,7 +36,38 @@ jobs:
           docker --version
           docker compose version
 
-      - name: Run e2e tests (docker-compose spins up inside tests)
+      - name: Start docker-compose (build images)
+        run: |
+          docker compose -f docker-compose.yml up -d --build
+
+      - name: Wait for services to be ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          wait_for_port() {
+            local host=$1; local port=$2; local timeout=${3:-600}; local start=$(date +%s)
+            echo "Waiting for $host:$port (timeout ${timeout}s)..."
+            while true; do
+              if nc -z -w1 "$host" "$port" 2>/dev/null; then
+                echo "$host:$port is ready"; break
+              fi
+              now=$(date +%s)
+              if (( now - start > timeout )); then
+                echo "Timeout waiting for $host:$port"; exit 1
+              fi
+              sleep 2
+            done
+          }
+          # Wait up to 10 minutes for all key services
+          wait_for_port localhost 8080 600   # product-service
+          wait_for_port localhost 8083 600   # inventory-service
+          wait_for_port localhost 8081 600   # order-service
+          wait_for_port localhost 5672 600   # rabbitmq
+          wait_for_port localhost 5432 600   # postgres
+
+      - name: Run e2e tests (use existing compose)
+        env:
+          SKIP_COMPOSE: "true"
         run: mvn -f e2e-tests/pom.xml -B test
 
       - name: Collect docker-compose logs on failure
