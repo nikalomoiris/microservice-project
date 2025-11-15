@@ -4,9 +4,9 @@
 [![E2E Tests](https://github.com/nikalomoiris/microservice-project/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/nikalomoiris/microservice-project/actions/workflows/e2e.yml)
 [![CodeQL](https://github.com/nikalomoiris/microservice-project/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/nikalomoiris/microservice-project/actions/workflows/codeql.yml)
 
-[![Issues](https://img.shields.io/github/issues/nikalomoiris/microservice-project?style=flat-square)](https://github.com/nikalomoiris/microservice-project/issues)
-[![PRs](https://img.shields.io/github/issues-pr/nikalomoiris/microservice-project?style=flat-square)](https://github.com/nikalomoiris/microservice-project/pulls)
-[![Last Commit](https://img.shields.io/github/last-commit/nikalomoiris/microservice-project?style=flat-square)](https://github.com/nikalomoiris/microservice-project/commits/main)
+[![Issues](https://img.shields.io/github/issues/nikalomoiris/microservice-project?style=flat-square&cacheSeconds=3600)](https://github.com/nikalomoiris/microservice-project/issues)
+[![PRs](https://img.shields.io/github/issues-pr/nikalomoiris/microservice-project?style=flat-square&cacheSeconds=3600)](https://github.com/nikalomoiris/microservice-project/pulls)
+[![Last Commit](https://img.shields.io/github/last-commit/nikalomoiris/microservice-project?style=flat-square&cacheSeconds=3600)](https://github.com/nikalomoiris/microservice-project/commits/main)
 [![Docs](https://img.shields.io/badge/Docs-service%20topology-blue?style=flat-square)](docs/service-topology.md)
 ![Java 21](https://img.shields.io/badge/Java-21-007396?logo=java&style=flat-square)
 ![Maven](https://img.shields.io/badge/build-Maven-C71A36?logo=apache-maven&style=flat-square)
