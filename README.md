@@ -1,9 +1,19 @@
 # microservices-project
 
-![CI (Unit)](https://github.com/nikalomoiris/microservice-project/actions/workflows/ci.yml/badge.svg?branch=main)
-![E2E Tests](https://github.com/nikalomoiris/microservice-project/actions/workflows/e2e.yml/badge.svg?branch=main)
+![CI (Unit)](https://github.com/nikalomoiris/microservice-project/actions/workflows/ci.yml/badge.svg?branch=main) ![E2E Tests](https://github.com/nikalomoiris/microservice-project/actions/workflows/e2e.yml/badge.svg?branch=main)
+
+[![Issues](https://img.shields.io/github/issues/nikalomoiris/microservice-project?style=flat-square)](https://github.com/nikalomoiris/microservice-project/issues) [![PRs](https://img.shields.io/github/issues-pr/nikalomoiris/microservice-project?style=flat-square)](https://github.com/nikalomoiris/microservice-project/pulls) [![Last Commit](https://img.shields.io/github/last-commit/nikalomoiris/microservice-project?style=flat-square)](https://github.com/nikalomoiris/microservice-project/commits/main) [![Docs](https://img.shields.io/badge/Docs-service%20topology-blue?style=flat-square)](docs/service-topology.md) ![Java 21](https://img.shields.io/badge/Java-21-007396?logo=java&style=flat-square) ![Maven](https://img.shields.io/badge/build-Maven-C71A36?logo=apache-maven&style=flat-square) [![Contributors](https://img.shields.io/github/contributors/nikalomoiris/microservice-project?style=flat-square)](https://github.com/nikalomoiris/microservice-project/graphs/contributors) [![License](https://img.shields.io/github/license/nikalomoiris/microservice-project?style=flat-square)](https://github.com/nikalomoiris/microservice-project)
 
 This project is a monorepo for a collection of microservices. It includes services for managing products, inventory, reviews, orders, and centralized logging.
+
+## Key Features
+
+- Product catalog with categories, filtering, sorting, and image upload.
+- Order workflow via RabbitMQ: `order.created` → inventory reserve → outcome events (`order.inventory.reserved`, `order.inventory.partially_reserved`, `order.inventory.reservation_failed`).
+- Inventory management with reserve/release endpoints and idempotent event listeners.
+- Review service with upvote/downvote and planned similarity-based moderation (see docs below).
+- Structured logging to Kafka via shared `logging-client`; `logging-service` consumes and prints.
+- Docker Compose for local infra: Postgres, RabbitMQ, Zookeeper, Kafka.
 
 ## Modules
 
@@ -33,6 +43,14 @@ To build the entire project, run the following command from the root directory:
 mvn clean install
 ```
 
+To build and run a single service locally:
+
+```bash
+# from a service directory, e.g. product-service
+cd services/product-service
+./mvnw spring-boot:run
+```
+
 ## Running the Services
 
 To run the services, you can use the provided `docker-compose.yml` file.
@@ -51,6 +69,14 @@ This will start the following services:
 *   `review-service` on port `8082`
 *   `inventory-service` on port `8083`
 *   `logging-service` on port `8090`
+
+### End-to-End Tests
+
+Run the E2E suite from the repo root:
+
+```bash
+mvn -f e2e-tests/pom.xml test
+```
 
 ## API Endpoints and cURL Commands
 
@@ -200,6 +226,20 @@ curl -X POST -H "Content-Type: application/json" -d '{
 }' http://localhost:8081/api/orders
 ```
 
+## Architecture & Messaging
+
+- RabbitMQ exchanges and routing keys:
+    - `product-exchange` — routing key `product.created`
+    - `order-exchange` — routing keys `order.created`, `order.inventory.reserved`, `order.inventory.partially_reserved`, `order.inventory.reservation_failed`
+- Inventory service consumes `product.created` and `order.created`; order service consumes inventory outcomes.
+- Structured logs flow to Kafka via `logging-client`; see `services/logging-client/STRUCTURED_LOGGING.md`.
+
+Details, diagrams, and sample payloads:
+- `docs/service-topology.md`
+- `docs/message-flow.md`
+
+Shared event DTOs live in `services/event-contracts` and must remain compatible across producers/consumers.
+
 ### Logging Service
 
 The logging service consumes log messages from a Kafka topic (`service-logs`) and outputs them to the console. It runs on port `8090` but does not expose HTTP endpoints. Services can publish logs using the `logging-client` library.
@@ -214,3 +254,8 @@ The project uses the following infrastructure services:
     *   Management UI: `http://localhost:15672` (username: `guest`, password: `guest`)
 *   **Kafka**: Distributed event streaming platform for logging (port `9092`)
 *   **Zookeeper**: Coordination service for Kafka (port `2181`)
+
+## Roadmap / Recent Work
+
+- Review similarity-based evaluation and moderation in `review-service` (planned/under implementation). See `docs/REVIEW_EVALUATION_IMPLEMENTATION_PLAN.md`.
+- Event contract cleanup and explicit routing keys documented in `docs/service-topology.md`.
