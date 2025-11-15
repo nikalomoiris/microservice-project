@@ -39,6 +39,30 @@ jobs:
       - name: Run e2e tests (docker-compose spins up inside tests)
         run: mvn -f e2e-tests/pom.xml -B test
 
+      - name: Collect docker-compose logs on failure
+        if: failure()
+        run: |
+          mkdir -p ci-artifacts
+          echo "Collecting Docker diagnostics..."
+          docker --version > ci-artifacts/docker-version.txt || true
+          docker info > ci-artifacts/docker-info.txt || true
+          docker compose version > ci-artifacts/docker-compose-version.txt || true
+          docker compose -f docker-compose.yml ps --all > ci-artifacts/compose-ps.txt || true
+          docker compose -f docker-compose.yml config > ci-artifacts/compose-config.yml || true
+          docker compose -f docker-compose.yml logs --no-color > ci-artifacts/compose-logs.txt || true
+          for svc in postgres-service rabbitmq-service zookeeper-service kafka-service product-service order-service review-service inventory-service logging-service; do \
+            docker compose -f docker-compose.yml logs --no-color "$svc" > "ci-artifacts/${svc}.log" || true; \
+          done
+
+      - name: Upload docker logs artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-docker-logs
+          path: ci-artifacts/**
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Upload e2e test reports
         if: always()
         uses: actions/upload-artifact@v4
