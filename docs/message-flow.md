@@ -158,6 +158,12 @@ flowchart LR
   - (B) Add a small README excerpt showing how to run the docker-compose stack so the RabbitMQ topology appears.
   - (C) Export the diagram to PNG/SVG (requires local Mermaid CLI or remote renderer).
 
+## Logging pipeline (local dev)
+
+- Services publish structured JSON logs to Kafka topic `service-logs` using `logging-client`.
+- Kafka Connect reads `service-logs` and writes to OpenSearch index `service-logs`.
+- OpenSearch Dashboards provides search/visualization; create a data view for `service-logs*` and use `@timestamp` as time field.
+
 
 ---
 Generated on 2025-10-25.

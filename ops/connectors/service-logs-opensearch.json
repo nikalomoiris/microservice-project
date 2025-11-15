@@ -1,0 +1,30 @@
+{
+  "name": "service-logs-opensearch",
+  "config": {
+    "connector.class": "io.aiven.kafka.connect.opensearch.OpensearchSinkConnector",
+    "tasks.max": "1",
+    "topics": "service-logs",
+    "connection.url": "http://opensearch:9200",
+    "index": "service-logs",
+    "key.ignore": "true",
+    "schema.ignore": "true",
+
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "header.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "header.converter.schemas.enable": "false",
+
+    "consumer.override.auto.offset.reset": "latest",
+
+    "behavior.on.malformed.documents": "warn",
+    "max.in.flight.requests": "1",
+    "batch.size": "2000",
+    "linger.ms": "500",
+    "flush.timeout.ms": "60000",
+    "retry.backoff.ms": "5000",
+    "connection.timeout.ms": "30000",
+    "read.timeout.ms": "30000"
+  }
+}
