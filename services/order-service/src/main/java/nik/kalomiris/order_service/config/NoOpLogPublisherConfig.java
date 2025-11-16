@@ -7,8 +7,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 /**
- * Provides a no-op LogPublisher when no LogPublisher bean is available on the classpath.
- * This helps local development / docker-compose runs where the external logging infrastructure
+ * Provides a no-op LogPublisher when no LogPublisher bean is available on the
+ * classpath.
+ * This helps local development / docker-compose runs where the external logging
+ * infrastructure
  * or client auto-configuration is not present.
  */
 @Configuration
@@ -21,6 +23,6 @@ public class NoOpLogPublisherConfig {
         // create a minimal LogPublisher instance using a null KafkaTemplate and
         // configured topic. Calls to publish will be caught and ignored by callers.
         String topic = env.getProperty("logging.topic.service-logs", "service-logs");
-        return new LogPublisher(null, topic);
+        return new LogPublisher(null, topic, null);
     }
 }
