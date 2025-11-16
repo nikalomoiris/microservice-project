@@ -31,6 +31,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Expose /actuator/metrics for ingest counters/gauges -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Spring for Apache Kafka -->
         <dependency>
             <groupId>org.springframework.kafka</groupId>

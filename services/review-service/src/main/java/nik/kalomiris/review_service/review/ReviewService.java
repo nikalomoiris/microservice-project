@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class ReviewService {
@@ -28,12 +29,22 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final LogPublisher logPublisher;
     private final ReviewEvaluationService evaluationService;
+    private final nik.kalomiris.review_service.metrics.ReviewMetrics reviewMetrics;
 
+    @Autowired
     public ReviewService(ReviewRepository reviewRepository, LogPublisher logPublisher,
-            ReviewEvaluationService evaluationService) {
+            ReviewEvaluationService evaluationService,
+            nik.kalomiris.review_service.metrics.ReviewMetrics reviewMetrics) {
         this.reviewRepository = reviewRepository;
         this.logPublisher = logPublisher;
         this.evaluationService = evaluationService;
+        this.reviewMetrics = reviewMetrics;
+    }
+
+    // Backward-compatible constructor for tests without metrics
+    public ReviewService(ReviewRepository reviewRepository, LogPublisher logPublisher,
+            ReviewEvaluationService evaluationService) {
+        this(reviewRepository, logPublisher, evaluationService, null);
     }
 
     public Review createReview(Review review) {
@@ -79,6 +90,13 @@ public class ReviewService {
             // ignore logging failures
         }
 
+        // Metrics: mark review creation
+        try {
+            if (reviewMetrics != null) {
+                reviewMetrics.markReviewAdded();
+            }
+        } catch (Exception ignored) {
+            /* best-effort */ }
         return finalReview;
     }
 
