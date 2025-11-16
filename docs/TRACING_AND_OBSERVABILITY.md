@@ -39,7 +39,7 @@ The project implements comprehensive distributed tracing and structured logging:
 
 ### Trace Flow
 ```
-Service Request → Spring Cloud Sleuth → Zipkin → OpenSearch (zipkin-span-*)
+Service Request → Micrometer Tracing → Zipkin → OpenSearch (zipkin-span-*)
                                                               ↓
                                               OpenSearch Dashboards (visualization)
 ```
