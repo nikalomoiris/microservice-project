@@ -60,6 +60,12 @@ public class LogPublisher {
                 logMessage.setSpanId(spanId);
             }
         }
+        
+        // No-op if kafkaTemplate is not available (e.g., in test environments)
+        if (kafkaTemplate == null) {
+            return;
+        }
+        
         try {
             String jsonMessage = objectMapper.writeValueAsString(logMessage);
             kafkaTemplate.send(topic, jsonMessage);

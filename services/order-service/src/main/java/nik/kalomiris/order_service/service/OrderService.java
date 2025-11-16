@@ -17,6 +17,7 @@ import nik.kalomiris.order_service.repository.OrderRepository;
 import nik.kalomiris.order_service.util.OrderStatusTransitions;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,6 @@ import io.micrometer.tracing.Span;
 @Service
 @Transactional
 public class OrderService {
-    private static final String ERROR_TAG_KEY = "error";
 
     /**
      * Service responsible for creating orders and coordinating side effects
@@ -51,7 +51,7 @@ public class OrderService {
             OrderMapper orderMapper,
             RabbitTemplate rabbitTemplate,
             LogPublisher logPublisher,
-            Tracer tracer) {
+            @Autowired(required = false) Tracer tracer) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
         this.rabbitTemplate = rabbitTemplate;
@@ -86,8 +86,8 @@ public class OrderService {
             });
         } catch (Exception e) {
             if (span != null) {
+                span.tag("failed_operation", "validation");
                 span.error(e);
-                span.tag(ERROR_TAG_KEY, "true");
             }
             throw e;
         }
@@ -104,8 +104,8 @@ public class OrderService {
             orderRepository.save(order);
         } catch (Exception e) {
             if (span != null) {
+                span.tag("failed_operation", "save");
                 span.error(e);
-                span.tag(ERROR_TAG_KEY, "true");
             }
             throw e;
         }
@@ -164,8 +164,8 @@ public class OrderService {
                     .orElseThrow(() -> new IllegalArgumentException("Order not found"));
         } catch (Exception e) {
             if (span != null) {
+                span.tag("failed_operation", "find_order");
                 span.error(e);
-                span.tag(ERROR_TAG_KEY, "true");
             }
             throw e;
         }
@@ -177,8 +177,8 @@ public class OrderService {
             IllegalStateException e = new IllegalStateException(
                     "Cannot transition order to CONFIRMED from status: " + order.getStatus());
             if (span != null) {
+                span.tag("failed_operation", "status_transition");
                 span.error(e);
-                span.tag(ERROR_TAG_KEY, "true");
             }
             throw e;
         }
