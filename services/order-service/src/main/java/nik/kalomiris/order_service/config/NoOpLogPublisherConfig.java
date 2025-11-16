@@ -23,6 +23,11 @@ public class NoOpLogPublisherConfig {
         // create a minimal LogPublisher instance using a null KafkaTemplate and
         // configured topic. Calls to publish will be caught and ignored by callers.
         String topic = env.getProperty("logging.topic.service-logs", "service-logs");
-        return new LogPublisher(null, topic, null);
+        return new LogPublisher(null, topic, null) {
+            @Override
+            public void publish(nik.kalomiris.logging_client.LogMessage logMessage) {
+                // no-op
+            }
+        };
     }
 }

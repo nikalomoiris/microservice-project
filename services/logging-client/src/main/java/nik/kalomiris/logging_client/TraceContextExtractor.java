@@ -14,15 +14,17 @@ public class TraceContextExtractor {
     }
 
     public String getTraceId() {
-        if (tracer == null)
+        if (tracer == null) {
             return null;
+        }
         Span span = tracer.currentSpan();
         return span != null ? span.context().traceId() : null;
     }
 
     public String getSpanId() {
-        if (tracer == null)
+        if (tracer == null) {
             return null;
+        }
         Span span = tracer.currentSpan();
         return span != null ? span.context().spanId() : null;
     }
