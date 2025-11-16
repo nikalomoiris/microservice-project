@@ -546,6 +546,65 @@ curl -s "http://localhost:9200/zipkin-span-*/_search?size=1" | jq '.hits.hits[0]
 
 ---
 
+## Runbook: Trace Analysis
+
+Follow these steps to investigate performance or reliability issues:
+
+1) Identify slow traces
+- Open Saved Search "Slow Traces (Zipkin)" or filter `duration > 1000000` (>1s)
+- Sort by duration to find worst offenders
+
+2) Drill into a trace
+- In Zipkin, inspect the timeline to find long spans
+- Check span tags (HTTP status, DB statement, custom tags like `order.number`)
+
+3) Correlate logs
+- Copy `traceId` from the span and search logs:
+  ```bash
+  curl -s "http://localhost:9200/service-logs-*/_search?q=traceId:<TRACE_ID>&size=50" | jq
+  ```
+- Look for ERROR/WARN entries around the time of the trace
+
+4) Isolate problematic service
+- Use the "P95 Latency by Service" chart to spot outliers
+- Filter dashboard by `localEndpoint.serviceName` for deep-dive
+
+5) Common remediations
+- Add/adjust custom span tags for key business data
+- Validate downstream dependencies (DB, RabbitMQ) for latency spikes
+- Review sampling (increase temporarily for targeted endpoints)
+
+---
+
+## Performance Testing and Tuning
+
+1) Baseline without tracing
+```bash
+wrk -t4 -c50 -d60s http://localhost:8081/api/orders   # example endpoint
+```
+
+2) With tracing enabled (default sampling)
+```bash
+export SPRING_PROFILES_ACTIVE=prod   # sampling.probability=0.1
+wrk -t4 -c50 -d60s http://localhost:8081/api/orders
+```
+
+3) Compare metrics
+- Request latency p50/p95/p99
+- Throughput (RPS)
+- CPU/memory on services
+
+4) Tuning knobs
+- `management.tracing.sampling.probability` (lower to reduce overhead)
+- Prefer asynchronous work where possible to reduce critical path time
+- Reduce heavy tags and large payload logging
+
+5) Target acceptance
+- Overhead < 5ms per request at p50
+- Minimal GC/CPU impact at target RPS
+
+---
+
 ## Best Practices
 
 ### Tracing
