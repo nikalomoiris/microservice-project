@@ -22,6 +22,8 @@ This project is a monorepo for a collection of microservices. It includes servic
 - Inventory management with reserve/release endpoints and idempotent event listeners.
 - Review service with upvote/downvote and planned similarity-based moderation (see docs below).
 - Structured logging to Kafka via shared `logging-client`; `logging-service` consumes and prints.
+- Distributed tracing with Zipkin and OpenSearch backend for trace persistence and correlation.
+- Pre-built OpenSearch Dashboards for trace analysis, performance monitoring, and error tracking.
 - Docker Compose for local infra: Postgres, RabbitMQ, Zookeeper, Kafka.
 
 ## Modules
@@ -78,6 +80,47 @@ This will start the following services:
 *   `review-service` on port `8082`
 *   `inventory-service` on port `8083`
 *   `logging-service` on port `8090`
+*   `opensearch` on port `9200` (Search and analytics engine)
+*   `opensearch-dashboards` on port `5601` (Visualization UI)
+*   `kafka-connect` on port `8085` (Streaming connector)
+*   `zipkin-service` on port `9411` (Distributed tracing UI)
+
+### Setting Up Observability
+
+After starting the services, provision the observability stack:
+
+```bash
+# Provision log pipeline (Kafka → OpenSearch)
+./ops/scripts/provision-logs-pipeline.sh
+
+# Provision tracing infrastructure
+./ops/scripts/provision-tracing.sh
+
+# Import pre-built dashboards
+curl -X POST "http://localhost:5601/api/saved_objects/_import?overwrite=true" \
+    -H "osd-xsrf: true" \
+    -H "Content-Type: multipart/form-data" \
+    -F "file=@./ops/opensearch/saved_objects/zipkin-saved-objects.ndjson"
+
+curl -X POST "http://localhost:5601/api/saved_objects/_import?overwrite=true" \
+    -H "osd-xsrf: true" \
+    -H "Content-Type: multipart/form-data" \
+    -F "file=@./ops/opensearch/saved_objects/tracing-dashboard.ndjson"
+
+curl -X POST "http://localhost:5601/api/saved_objects/_import?overwrite=true" \
+    -H "osd-xsrf: true" \
+    -H "Content-Type: multipart/form-data" \
+    -F "file=@./ops/opensearch/saved_objects/tracing-advanced.ndjson"
+
+# Generate sample traces
+./scripts/test-distributed-tracing.sh
+```
+
+**Access Observability UIs:**
+- Zipkin: http://localhost:9411
+- OpenSearch Dashboards: http://localhost:5601/app/dashboards
+
+For detailed documentation, see [`docs/TRACING_AND_OBSERVABILITY.md`](docs/TRACING_AND_OBSERVABILITY.md).
 
 ### End-to-End Tests
 
@@ -247,6 +290,7 @@ Details, diagrams, and sample payloads:
 - `docs/service-topology.md`
 - `docs/message-flow.md`
 - `docs/PR_CHECKLIST.md` (event-driven changes, rollout plans, deployment order)
+- `docs/TRACING_AND_OBSERVABILITY.md` (distributed tracing setup, scripts, dashboards)
 
 Shared event DTOs live in `services/event-contracts` and must remain compatible across producers/consumers.
 
@@ -264,6 +308,10 @@ The project uses the following infrastructure services:
     *   Management UI: `http://localhost:15672` (username: `guest`, password: `guest`)
 *   **Kafka**: Distributed event streaming platform for logging (port `9092`)
 *   **Zookeeper**: Coordination service for Kafka (port `2181`)
+*   **OpenSearch**: Search and analytics engine for logs and traces (port `9200`)
+*   **OpenSearch Dashboards**: Visualization platform (port `5601`)
+*   **Kafka Connect**: Kafka-to-OpenSearch streaming connector (port `8085`)
+*   **Zipkin**: Distributed tracing system with OpenSearch backend (port `9411`)
 
 ## Roadmap / Recent Work
 

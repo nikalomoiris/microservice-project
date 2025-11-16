@@ -1,6 +1,5 @@
 package nik.kalomiris.order_service.config;
 
-
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -19,7 +18,7 @@ public class RabbitMQConfig {
     public static final String EXCHANGE_NAME = "order-exchange";
     public static final String ROUTING_KEY_ORDER_CREATED = "order.created";
     public static final String ROUTING_KEY_ORDER_CONFIRMED = "order.confirmed";
-    
+
     public static final String ORDER_INVENTORY_RESERVED_QUEUE = "order.inventory.reserved.queue";
     public static final String ORDER_INVENTORY_RESERVATION_FAILED_QUEUE = "order.inventory.reservation_failed.queue";
     public static final String ORDER_INVENTORY_COMMITTED_QUEUE = "order.inventory.committed.queue";
@@ -75,9 +74,11 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter messageConverter) {
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
+            MessageConverter messageConverter) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(messageConverter);
+        template.setObservationEnabled(true);
         return template;
     }
 }

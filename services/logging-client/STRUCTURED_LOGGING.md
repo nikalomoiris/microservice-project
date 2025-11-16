@@ -70,11 +70,25 @@ LogMessage logMessage = new LogMessage.Builder()
         .level("INFO")
         .service("order-service")
         .logger("nik.kalomiris.order_service.OrderService")
-        .traceId("trace-abc123")
-        .spanId("span-def456")
         .metadata(Map.of("orderId", "42", "userId", "7"))
         .build();
 
+logPublisher.publish(logMessage);
+```
+
+Note: If Micrometer Tracing is configured in your service (a `Tracer` bean exists), the logging client automatically injects the current `traceId` and `spanId` into each `LogMessage` when they are not explicitly set.
+
+#### Auto-injection example
+
+```java
+// With Micrometer Tracing enabled in the service, you can omit trace fields
+LogMessage logMessage = new LogMessage.Builder()
+    .message("Order processed")
+    .level("INFO")
+    .service("order-service")
+    .build();
+
+// LogPublisher will populate traceId/spanId from the current span context
 logPublisher.publish(logMessage);
 ```
 

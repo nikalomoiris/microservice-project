@@ -40,8 +40,16 @@ Infrastructure (from `docker-compose.yml`):
 - Zookeeper (`zookeeper-service`) — 2181
 - Kafka (`kafka-service`) — 9092
 - OpenSearch (`opensearch`) — 9200 (local dev, security disabled)
+  - Stores structured logs (index: `service-logs-YYYY-MM-DD`)
+  - Stores distributed traces (index: `zipkin-span-YYYY-MM-DD`)
+  - Trace-log correlation enabled via shared `traceId`
 - OpenSearch Dashboards (`opensearch-dashboards`) — 5601
 - Kafka Connect (`kafka-connect`) — 8083 (mapped to host 8085)
+- Zipkin (`zipkin-service`) — 9411 (UI at http://localhost:9411)
+  - Storage backend: OpenSearch at `http://opensearch:9200`
+  - Persistent trace storage with daily indices
+  - B3 propagation format for trace context
+  - Query traces: see `ops/opensearch/TRACING_QUERIES.md`
 
 ---
 
