@@ -36,6 +36,27 @@ services:
       retries: 5
 
 
+  zipkin-service:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin-service
+    environment:
+      - STORAGE_TYPE=elasticsearch
+      - ES_HOSTS=http://opensearch:9200
+      - ES_INDEX=zipkin
+      - ES_INDEX_SHARDS=1
+      - ES_INDEX_REPLICAS=0
+    ports:
+      - "9411:9411"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9411/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
   product-service:
     build:
       context: .
