@@ -42,6 +42,7 @@ Infrastructure (from `docker-compose.yml`):
 - OpenSearch (`opensearch`) — 9200 (local dev, security disabled)
 - OpenSearch Dashboards (`opensearch-dashboards`) — 5601
 - Kafka Connect (`kafka-connect`) — 8083 (mapped to host 8085)
+- Zipkin (`zipkin-service`) — 9411 (UI at http://localhost:9411)
 
 ---
 
