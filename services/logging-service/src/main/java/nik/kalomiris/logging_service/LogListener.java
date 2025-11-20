@@ -1,6 +1,7 @@
 package nik.kalomiris.logging_service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Profile;
@@ -20,20 +21,48 @@ public class LogListener {
     private final ObjectMapper objectMapper;
     private static final Logger log = LoggerFactory.getLogger(LogListener.class);
 
-    public LogListener() {
+    private final nik.kalomiris.logging_service.metrics.LoggingMetrics loggingMetrics;
+
+    public LogListener(nik.kalomiris.logging_service.metrics.LoggingMetrics loggingMetrics) {
         this.objectMapper = new ObjectMapper();
+        this.loggingMetrics = loggingMetrics;
     }
 
     @KafkaListener(topics = "service-logs", groupId = "logging-service-group")
     public void listen(String message) {
         try {
-            // Parse the JSON message to pretty print it
-            Object json = objectMapper.readValue(message, Object.class);
+            JsonNode json = objectMapper.readTree(message);
             String prettyJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
             log.info("[LOG] {}", prettyJson);
+            safeUpdateMetrics(json);
         } catch (Exception e) {
-            // If JSON parsing fails, log the raw message
             log.info("[LOG] (raw) {}", message);
+            safeMarkIngest();
+        }
+    }
+
+    private void safeUpdateMetrics(JsonNode json) {
+        try {
+            loggingMetrics.markIngest();
+            JsonNode levelNode = json.get("level");
+            if (levelNode != null) {
+                String level = levelNode.asText("");
+                if ("ERROR".equalsIgnoreCase(level)) {
+                    loggingMetrics.markError();
+                } else if ("WARN".equalsIgnoreCase(level)) {
+                    loggingMetrics.markWarn();
+                }
+            }
+        } catch (Exception ignored) {
+            /* metrics best-effort */
+        }
+    }
+
+    private void safeMarkIngest() {
+        try {
+            loggingMetrics.markIngest();
+        } catch (Exception ignored) {
+            /* best-effort */
         }
     }
 }

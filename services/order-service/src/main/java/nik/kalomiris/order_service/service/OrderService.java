@@ -17,17 +17,19 @@ import nik.kalomiris.order_service.repository.OrderRepository;
 import nik.kalomiris.order_service.util.OrderStatusTransitions;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.Span;
+import nik.kalomiris.order_service.metrics.OrderMetrics;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @Transactional
 public class OrderService {
+    private static final String FAILED_OPERATION_TAG = "failed_operation";
 
     /**
      * Service responsible for creating orders and coordinating side effects
@@ -45,18 +47,32 @@ public class OrderService {
     private final RabbitTemplate rabbitTemplate;
     private final LogPublisher logPublisher;
     private final Tracer tracer;
+    private final OrderMetrics orderMetrics;
 
+    @Autowired
+    public OrderService(
+            OrderRepository orderRepository,
+            OrderMapper orderMapper,
+            RabbitTemplate rabbitTemplate,
+            LogPublisher logPublisher,
+            @Autowired(required = false) Tracer tracer,
+            OrderMetrics orderMetrics) {
+        this.orderRepository = orderRepository;
+        this.orderMapper = orderMapper;
+        this.rabbitTemplate = rabbitTemplate;
+        this.logPublisher = logPublisher;
+        this.tracer = tracer;
+        this.orderMetrics = orderMetrics;
+    }
+
+    // Backward-compatible constructor for tests that don't provide metrics
     public OrderService(
             OrderRepository orderRepository,
             OrderMapper orderMapper,
             RabbitTemplate rabbitTemplate,
             LogPublisher logPublisher,
             @Autowired(required = false) Tracer tracer) {
-        this.orderRepository = orderRepository;
-        this.orderMapper = orderMapper;
-        this.rabbitTemplate = rabbitTemplate;
-        this.logPublisher = logPublisher;
-        this.tracer = tracer;
+        this(orderRepository, orderMapper, rabbitTemplate, logPublisher, tracer, null);
     }
 
     public void createOrder(OrderRequest orderRequest) {
@@ -79,14 +95,10 @@ public class OrderService {
 
         // Validate line items contain productId
         try {
-            orderRequest.getOrderLineItemsDtoList().forEach(itemDto -> {
-                if (itemDto.getProductId() == null) {
-                    throw new IllegalArgumentException("Product ID is required for all order line items.");
-                }
-            });
+            validateLineItems(orderRequest);
         } catch (Exception e) {
             if (span != null) {
-                span.tag("failed_operation", "validation");
+                span.tag(FAILED_OPERATION_TAG, "validation");
                 span.error(e);
             }
             throw e;
@@ -104,7 +116,7 @@ public class OrderService {
             orderRepository.save(order);
         } catch (Exception e) {
             if (span != null) {
-                span.tag("failed_operation", "save");
+                span.tag(FAILED_OPERATION_TAG, "save");
                 span.error(e);
             }
             throw e;
@@ -153,6 +165,15 @@ public class OrderService {
         } catch (Exception e) {
             // ignore logging failures
         }
+
+        // Metrics: increment created counter and update last-created timestamp
+        try {
+            if (orderMetrics != null) {
+                orderMetrics.markOrderCreated();
+            }
+        } catch (Exception ignored) {
+            /* metrics update is best-effort and should not affect business flow */
+        }
     }
 
     public void confirmOrder(String orderNumber) {
@@ -164,7 +185,7 @@ public class OrderService {
                     .orElseThrow(() -> new IllegalArgumentException("Order not found"));
         } catch (Exception e) {
             if (span != null) {
-                span.tag("failed_operation", "find_order");
+                span.tag(FAILED_OPERATION_TAG, "find_order");
                 span.error(e);
             }
             throw e;
@@ -177,7 +198,7 @@ public class OrderService {
             IllegalStateException e = new IllegalStateException(
                     "Cannot transition order to CONFIRMED from status: " + order.getStatus());
             if (span != null) {
-                span.tag("failed_operation", "status_transition");
+                span.tag(FAILED_OPERATION_TAG, "status_transition");
                 span.error(e);
             }
             throw e;
@@ -213,4 +234,11 @@ public class OrderService {
         }
     }
 
+    private void validateLineItems(OrderRequest orderRequest) {
+        orderRequest.getOrderLineItemsDtoList().forEach(itemDto -> {
+            if (itemDto.getProductId() == null) {
+                throw new IllegalArgumentException("Product ID is required for all order line items.");
+            }
+        });
+    }
 }

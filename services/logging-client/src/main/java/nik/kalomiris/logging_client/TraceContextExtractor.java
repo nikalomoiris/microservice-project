@@ -20,14 +20,15 @@ public class TraceContextExtractor {
     /**
      * Constructs a TraceContextExtractor.
      * <p>
-     * The tracerProvider may not provide a Tracer bean if tracing is not configured;
+     * The tracerProvider may not provide a Tracer bean if tracing is not
+     * configured;
      * in that case, {@code tracer} will be null and all methods will return null.
      * </p>
      *
      * @param tracerProvider ObjectProvider for Tracer, may be absent (null Tracer)
      */
     public TraceContextExtractor(@Nullable ObjectProvider<Tracer> tracerProvider) {
-        this.tracer = tracerProvider.getIfAvailable();
+        this.tracer = (tracerProvider != null) ? tracerProvider.getIfAvailable() : null;
     }
 
     public String getTraceId() {
