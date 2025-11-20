@@ -1,6 +1,5 @@
 package nik.kalomiris.product_service.product;
 
-
 import nik.kalomiris.product_service.config.RabbitMQConfig;
 import nik.kalomiris.events.dtos.ProductCreatedEvent;
 import nik.kalomiris.logging_client.LogPublisher;
@@ -12,6 +11,7 @@ import nik.kalomiris.product_service.image.Image;
 import nik.kalomiris.product_service.image.ImageRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
@@ -20,6 +20,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class ProductService {
+    private static final String SERVICE_NAME = "product-service";
+    private static final String LOGGER_NAME = "nik.kalomiris.product_service.product.ProductService";
+    private static final String PRODUCT_ID_KEY = "productId";
 
     /**
      * Business logic for products. Responsible for creating products,
@@ -33,17 +36,29 @@ public class ProductService {
     private final ImageRepository imageRepository;
     private final RabbitTemplate rabbitTemplate;
     private final LogPublisher logPublisher;
+    private final nik.kalomiris.product_service.metrics.ProductMetrics productMetrics;
 
-    public ProductService(ProductRepository productRepository, ProductMapper productMapper, 
-            ImageRepository imageRepository, RabbitTemplate rabbitTemplate, LogPublisher logPublisher) {
+    @Autowired
+    public ProductService(ProductRepository productRepository, ProductMapper productMapper,
+            ImageRepository imageRepository, RabbitTemplate rabbitTemplate, LogPublisher logPublisher,
+            nik.kalomiris.product_service.metrics.ProductMetrics productMetrics) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.imageRepository = imageRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.logPublisher = logPublisher;
+        this.productMetrics = productMetrics;
     }
+
+    // Backward-compatible constructor without metrics
+    public ProductService(ProductRepository productRepository, ProductMapper productMapper,
+            ImageRepository imageRepository, RabbitTemplate rabbitTemplate, LogPublisher logPublisher) {
+        this(productRepository, productMapper, imageRepository, rabbitTemplate, logPublisher, null);
+    }
+
     /**
-     * Associates a new image with a product by productId and imageUrl (path or URL).
+     * Associates a new image with a product by productId and imageUrl (path or
+     * URL).
      */
     @Transactional
     public void addImageToProduct(Long productId, String imageUrl) {
@@ -60,9 +75,9 @@ public class ProductService {
             LogMessage logMessage = new LogMessage.Builder()
                     .message("Image added to product")
                     .level("INFO")
-                    .service("product-service")
-                    .logger("nik.kalomiris.product_service.product.ProductService")
-                    .metadata(Map.of("productId", productId.toString(), "imageUrl", imageUrl))
+                    .service(SERVICE_NAME)
+                    .logger(LOGGER_NAME)
+                    .metadata(Map.of(PRODUCT_ID_KEY, productId.toString(), "imageUrl", imageUrl))
                     .build();
             logPublisher.publish(logMessage);
         } catch (Exception e) {
@@ -81,7 +96,7 @@ public class ProductService {
 
         List<Product> products;
         if (categoryName != null && !categoryName.isEmpty()) {
-            products = productRepository.findByCategoryName(categoryName,sort);
+            products = productRepository.findByCategoryName(categoryName, sort);
         } else {
             products = productRepository.findAll(sort);
         }
@@ -90,8 +105,8 @@ public class ProductService {
             LogMessage logMessage = new LogMessage.Builder()
                     .message("Products retrieved")
                     .level("INFO")
-                    .service("product-service")
-                    .logger("nik.kalomiris.product_service.product.ProductService")
+                    .service(SERVICE_NAME)
+                    .logger(LOGGER_NAME)
                     .metadata(categoryName != null ? Map.of("categoryName", categoryName) : null)
                     .build();
             logPublisher.publish(logMessage);
@@ -118,21 +133,31 @@ public class ProductService {
 
         Product savedProduct = productRepository.save(product);
 
-    // Send a message to RabbitMQ
-    rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_PRODUCT_CREATED, new ProductCreatedEvent(savedProduct.getId(), savedProduct.getSku()));
+        // Send a message to RabbitMQ
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_PRODUCT_CREATED,
+                new ProductCreatedEvent(savedProduct.getId(), savedProduct.getSku()));
 
         // Publish a log event about the created product. Ignore logging failures.
         try {
             LogMessage logMessage = new LogMessage.Builder()
                     .message("Product created")
                     .level("INFO")
-                    .service("product-service")
-                    .logger("nik.kalomiris.product_service.product.ProductService")
-                    .metadata(Map.of("sku", savedProduct.getSku(), "productId", savedProduct.getId().toString()))
+                    .service(SERVICE_NAME)
+                    .logger(LOGGER_NAME)
+                    .metadata(Map.of("sku", savedProduct.getSku(), PRODUCT_ID_KEY, savedProduct.getId().toString()))
                     .build();
             logPublisher.publish(logMessage);
         } catch (Exception e) {
             // ignore logging failures
+        }
+
+        // Metrics: increment created counter and update last-added timestamp
+        try {
+            if (productMetrics != null) {
+                productMetrics.markProductAdded();
+            }
+        } catch (Exception ignored) {
+            /* metrics update is best-effort and should not affect business flow */
         }
 
         return productMapper.toDto(savedProduct);
@@ -145,9 +170,9 @@ public class ProductService {
             LogMessage logMessage = new LogMessage.Builder()
                     .message("Product updated")
                     .level("INFO")
-                    .service("product-service")
-                    .logger("nik.kalomiris.product_service.product.ProductService")
-                    .metadata(Map.of("productId", updatedProduct.getId().toString()))
+                    .service(SERVICE_NAME)
+                    .logger(LOGGER_NAME)
+                    .metadata(Map.of(PRODUCT_ID_KEY, updatedProduct.getId().toString()))
                     .build();
             logPublisher.publish(logMessage);
         } catch (Exception e) {
@@ -160,14 +185,15 @@ public class ProductService {
         // Perform deletion; allow exceptions to propagate to caller.
         productRepository.deleteById(id);
 
-        // Publish deletion log; ignore logging failures so deletion result is not affected.
+        // Publish deletion log; ignore logging failures so deletion result is not
+        // affected.
         try {
             LogMessage logMessage = new LogMessage.Builder()
                     .message("Product deleted")
                     .level("INFO")
-                    .service("product-service")
-                    .logger("nik.kalomiris.product_service.product.ProductService")
-                    .metadata(Map.of("productId", id.toString()))
+                    .service(SERVICE_NAME)
+                    .logger(LOGGER_NAME)
+                    .metadata(Map.of(PRODUCT_ID_KEY, id.toString()))
                     .build();
             logPublisher.publish(logMessage);
         } catch (Exception e) {

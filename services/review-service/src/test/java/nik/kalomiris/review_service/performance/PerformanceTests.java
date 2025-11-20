@@ -4,7 +4,6 @@ import nik.kalomiris.logging_client.LogPublisher;
 import nik.kalomiris.review_service.config.ReviewEvaluationConfig;
 import nik.kalomiris.review_service.evaluation.ReviewEvaluationService;
 import nik.kalomiris.review_service.review.Review;
-import nik.kalomiris.review_service.review.ReviewStatus;
 import nik.kalomiris.review_service.similarity.CompositeSimilarityCalculator;
 import nik.kalomiris.review_service.similarity.EvaluationResult;
 import nik.kalomiris.review_service.similarity.LevenshteinSimilarityCalculator;
@@ -70,7 +69,7 @@ class PerformanceTests {
 
         assertTrue(elapsedMillis < 200,
                 String.format("Evaluation took %dms, expected < 200ms", elapsedMillis));
-        
+
         assertNotNull(result);
         System.out.printf("✓ Evaluated 1000 reviews in %dms (target: <200ms)%n", elapsedMillis);
     }
@@ -82,7 +81,7 @@ class PerformanceTests {
 
         for (int i = 0; i < 100; i++) {
             Review newReview = createReview(1000L + i, "Review number " + i);
-            
+
             long startTime = System.nanoTime();
             evaluationService.evaluate(newReview, existingReviews);
             executionTimes.add((System.nanoTime() - startTime) / 1_000_000);
@@ -99,7 +98,7 @@ class PerformanceTests {
     void evaluationFailure_gracefulDegradation() {
         Review existingReview = createReview(1L, null);
         Review newReview = createReview(2L, "Valid review");
-        
+
         EvaluationResult result = evaluationService.evaluate(newReview, List.of(existingReview));
 
         assertNotNull(result);
