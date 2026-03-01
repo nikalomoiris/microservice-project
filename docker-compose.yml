@@ -149,28 +149,28 @@ services:
       rabbitmq-service:
         condition: service_healthy
 
-  # payment-service:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/payment-service/Dockerfile
-  #   container_name: payment-service
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-service:5432/paymentsdb
-  #     - SPRING_DATASOURCE_USERNAME=postgres
-  #     - SPRING_DATASOURCE_PASSWORD=postgres
-  #     - SPRING_RABBITMQ_HOST=rabbitmq-service
-  #     - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-service:9092
-  #     - PAYMENT_PROVIDER=mock
-  #     - PAYMENT_RETRY_MAX_ATTEMPTS=3
-  #     - PAYMENT_RETRY_INITIAL_DELAY_MS=1000
-  #     - PAYMENT_RETRY_MULTIPLIER=2.0
-  #   ports:
-  #     - "8084:8084"
-  #   depends_on:
-  #     postgres-service:
-  #       condition: service_healthy
-  #     rabbitmq-service:
-  #       condition: service_healthy
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./services/payment-service/Dockerfile
+    container_name: payment-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-service:5432/paymentsdb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_RABBITMQ_HOST=rabbitmq-service
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-service:9092
+      - PAYMENT_PROVIDER=mock
+      - PAYMENT_RETRY_MAX_ATTEMPTS=3
+      - PAYMENT_RETRY_INITIAL_DELAY_MS=1000
+      - PAYMENT_RETRY_MULTIPLIER=2.0
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres-service:
+        condition: service_healthy
+      rabbitmq-service:
+        condition: service_healthy
 
   logging-service:
     build:
