@@ -25,9 +25,12 @@ public class MockPaymentProvider implements PaymentProvider {
     private static final String VOID_FAILED_MESSAGE = "Void failed - last digit ";
     private static final String VOID_SUCCESS_MESSAGE = "Void successful - last digit ";
 
+    private static final String TIMEOUT_ERROR_CODE = "TIMEOUT";
+    private static final String PROVIDER_UNAVAILABLE_ERROR_CODE = "PROVIDER_UNAVAILABLE";
+
     private char getLastDigit(BigDecimal amount) {
         String plainStr = amount.toPlainString();
-        String digits = plainStr.replaceAll("\\.", "");
+        String digits = plainStr.replace(".", "");
         return digits.charAt(digits.length() - 1);
     }
 
@@ -51,14 +54,14 @@ public class MockPaymentProvider implements PaymentProvider {
 
             case '6', '7':
                 return ProviderAuthResult.failure()
-                        .withErrorCode("TIMEOUT")
+                        .withErrorCode(TIMEOUT_ERROR_CODE)
                         .withFailureType(FailureType.TRANSIENT)
                         .withMessage(AUTH_FAILED_MESSAGE + lastDigit)
                         .build();
 
             case '8', '9':
                 return ProviderAuthResult.failure()
-                        .withErrorCode("PROVIDER_UNAVAILABLE")
+                        .withErrorCode(PROVIDER_UNAVAILABLE_ERROR_CODE)
                         .withFailureType(FailureType.TRANSIENT)
                         .withMessage(AUTH_FAILED_MESSAGE + lastDigit)
                         .build();
@@ -89,14 +92,14 @@ public class MockPaymentProvider implements PaymentProvider {
 
             case '6', '7':
                 return ProviderCaptureResult.failure()
-                        .withErrorCode("TIMEOUT")
+                        .withErrorCode(TIMEOUT_ERROR_CODE)
                         .withFailureType(FailureType.TRANSIENT)
                         .withMessage(CAPTURE_FAILED_MESSAGE + lastDigit)
                         .build();
 
             case '8', '9':
                 return ProviderCaptureResult.failure()
-                        .withErrorCode("PROVIDER_UNAVAILABLE")
+                        .withErrorCode(PROVIDER_UNAVAILABLE_ERROR_CODE)
                         .withFailureType(FailureType.TRANSIENT)
                         .withMessage(CAPTURE_FAILED_MESSAGE + lastDigit)
                         .build();
@@ -128,14 +131,14 @@ public class MockPaymentProvider implements PaymentProvider {
 
             case '6', '7':
                 return ProviderRefundResult.failure()
-                        .withErrorCode("TIMEOUT")
+                        .withErrorCode(TIMEOUT_ERROR_CODE)
                         .withFailureType(FailureType.TRANSIENT)
                         .withMessage(REFUND_FAILED_MESSAGE + lastDigit)
                         .build();
 
             case '8', '9':
                 return ProviderRefundResult.failure()
-                        .withErrorCode("PROVIDER_UNAVAILABLE")
+                        .withErrorCode(PROVIDER_UNAVAILABLE_ERROR_CODE)
                         .withFailureType(FailureType.TRANSIENT)
                         .withMessage(REFUND_FAILED_MESSAGE + lastDigit)
                         .build();
@@ -166,14 +169,14 @@ public class MockPaymentProvider implements PaymentProvider {
 
             case '6', '7':
                 return ProviderVoidResult.failure()
-                        .withErrorCode("TIMEOUT")
+                        .withErrorCode(TIMEOUT_ERROR_CODE)
                         .withFailureType(FailureType.TRANSIENT)
                         .withMessage(VOID_FAILED_MESSAGE + lastDigit)
                         .build();
 
             case '8', '9':
                 return ProviderVoidResult.failure()
-                        .withErrorCode("PROVIDER_UNAVAILABLE")
+                        .withErrorCode(PROVIDER_UNAVAILABLE_ERROR_CODE)
                         .withFailureType(FailureType.TRANSIENT)
                         .withMessage(VOID_FAILED_MESSAGE + lastDigit)
                         .build();
