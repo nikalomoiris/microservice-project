@@ -27,6 +27,7 @@
         <module>services/order-service</module>
         <module>services/logging-service</module>
         <module>services/logging-client</module>
+        <module>services/payment-service</module>
     </modules>
 
     <properties>
