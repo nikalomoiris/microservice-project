@@ -1,6 +1,8 @@
 package nik.kalomiris.order_service.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -9,7 +11,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import nik.kalomiris.order_service.dto.OrderLineItemsDto;
 import nik.kalomiris.order_service.dto.OrderRequest;
+import nik.kalomiris.order_service.dto.ProductPrice;
 import nik.kalomiris.order_service.repository.OrderRepository;
+import nik.kalomiris.order_service.service.ProductServiceClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import nik.kalomiris.logging_client.LogPublisher;
@@ -43,20 +47,25 @@ public class OrderControllerTests {
     @MockBean
     private LogPublisher logPublisher;
 
+    @MockBean
+    private ProductServiceClient productServiceClient;
+
     @Test
     void shouldCreateOrder() throws Exception {
+        // Mock product-service client to return a fixed price
+        when(productServiceClient.getProduct(any(Long.class)))
+                .thenReturn(new ProductPrice(new BigDecimal("29.99"), "TEST-SKU"));
+
         OrderRequest orderRequest = getOrderRequest();
         String orderRequestString = objectMapper.writeValueAsString(
-            orderRequest
-        );
+                orderRequest);
 
         mockMvc
-            .perform(
-                post("/api/orders")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(orderRequestString)
-            )
-            .andExpect(status().isCreated());
+                .perform(
+                        post("/api/orders")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(orderRequestString))
+                .andExpect(status().isCreated());
 
         assertEquals(1, orderRepository.findAll().size());
     }
@@ -65,8 +74,6 @@ public class OrderControllerTests {
         OrderRequest orderRequest = new OrderRequest();
         OrderLineItemsDto orderLineItemsDto = new OrderLineItemsDto();
         orderLineItemsDto.setProductId(1L);
-        orderLineItemsDto.setSku("test-sku");
-        orderLineItemsDto.setPrice(BigDecimal.TEN);
         orderLineItemsDto.setQuantity(1);
         orderRequest.setOrderLineItemsDtoList(List.of(orderLineItemsDto));
         return orderRequest;

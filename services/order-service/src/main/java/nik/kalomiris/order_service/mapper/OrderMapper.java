@@ -8,9 +8,7 @@ import org.springframework.stereotype.Component;
 public class OrderMapper {
     public OrderLineItem mapToOrderLineItem(OrderLineItemsDto orderLineItemsDto) {
         OrderLineItem orderLineItem = new OrderLineItem();
-        orderLineItem.setPrice(orderLineItemsDto.getPrice());
         orderLineItem.setQuantity(orderLineItemsDto.getQuantity());
-        orderLineItem.setSku(orderLineItemsDto.getSku());
         orderLineItem.setProductId(orderLineItemsDto.getProductId());
         return orderLineItem;
     }

@@ -1,6 +1,8 @@
 package nik.kalomiris.order_service.domain;
 
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
@@ -10,9 +12,10 @@ import java.util.List;
  *
  * - `orderNumber` is an externally visible identifier (UUID string).
  * - `orderLineItems` holds the item rows. Cascade ALL is used so items are
- *   persisted with the owning Order.
+ * persisted with the owning Order.
  * - `status` tracks the order state using {@link OrderStatus}.
- * - `version` is used for optimistic locking to avoid concurrent write conflicts.
+ * - `version` is used for optimistic locking to avoid concurrent write
+ * conflicts.
  */
 public class Order {
 
@@ -21,6 +24,10 @@ public class Order {
     private Long id;
 
     private String orderNumber;
+
+    private BigDecimal totalPrice;
+
+    private String currency;
 
     @OneToMany(cascade = CascadeType.ALL)
     private List<OrderLineItem> orderLineItems;
@@ -31,16 +38,19 @@ public class Order {
     @Version
     private Long version;
 
-    public Order() {}
+    public Order() {
+    }
 
     public Order(
-        Long id,
-        String orderNumber,
-        List<OrderLineItem> orderLineItems
-    ) {
+            Long id,
+            String orderNumber,
+            List<OrderLineItem> orderLineItems,
+            BigDecimal totalPrice) {
         this.id = id;
         this.orderNumber = orderNumber;
         this.orderLineItems = orderLineItems;
+        this.totalPrice = totalPrice;
+        this.currency = "USD";
     }
 
     public Long getId() {
@@ -81,5 +91,21 @@ public class Order {
 
     public void setVersion(Long version) {
         this.version = version;
+    }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 }

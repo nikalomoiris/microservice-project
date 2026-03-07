@@ -1,5 +1,6 @@
 package nik.kalomiris.order_service.service;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import nik.kalomiris.order_service.domain.OrderLineItem;
 import nik.kalomiris.order_service.domain.OrderStatus;
 import nik.kalomiris.events.dtos.OrderEvent;
 import nik.kalomiris.order_service.dto.OrderRequest;
+import nik.kalomiris.order_service.dto.ProductPrice;
 import nik.kalomiris.order_service.mapper.OrderMapper;
 import nik.kalomiris.order_service.repository.OrderRepository;
 import nik.kalomiris.order_service.util.OrderStatusTransitions;
@@ -44,6 +46,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final ProductServiceClient productServiceClient;
     private final RabbitTemplate rabbitTemplate;
     private final LogPublisher logPublisher;
     private final Tracer tracer;
@@ -53,12 +56,14 @@ public class OrderService {
     public OrderService(
             OrderRepository orderRepository,
             OrderMapper orderMapper,
+            ProductServiceClient productServiceClient,
             RabbitTemplate rabbitTemplate,
             LogPublisher logPublisher,
             @Autowired(required = false) Tracer tracer,
             OrderMetrics orderMetrics) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
+        this.productServiceClient = productServiceClient;
         this.rabbitTemplate = rabbitTemplate;
         this.logPublisher = logPublisher;
         this.tracer = tracer;
@@ -72,7 +77,7 @@ public class OrderService {
             RabbitTemplate rabbitTemplate,
             LogPublisher logPublisher,
             @Autowired(required = false) Tracer tracer) {
-        this(orderRepository, orderMapper, rabbitTemplate, logPublisher, tracer, null);
+        this(orderRepository, orderMapper, null, rabbitTemplate, logPublisher, tracer, null);
     }
 
     public void createOrder(OrderRequest orderRequest) {
@@ -112,6 +117,16 @@ public class OrderService {
 
         order.setOrderLineItems(orderLineItems);
 
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        for (OrderLineItem lineItem : orderLineItems) {
+            ProductPrice productPrice = productServiceClient.getProduct(lineItem.getProductId());
+            lineItem.setPrice(productPrice.price());
+            lineItem.setSku(productPrice.sku());
+            totalPrice = totalPrice.add(productPrice.price().multiply(BigDecimal.valueOf(lineItem.getQuantity())));
+        }
+
+        order.setTotalPrice(totalPrice);
+
         try {
             orderRepository.save(order);
         } catch (Exception e) {
@@ -125,6 +140,8 @@ public class OrderService {
         OrderEvent event = new OrderEvent(
                 order.getOrderNumber(),
                 order.getOrderNumber(),
+                order.getTotalPrice(),
+                order.getCurrency(),
                 Instant.now(),
                 order.getOrderLineItems()
                         .stream()
@@ -207,6 +224,8 @@ public class OrderService {
         OrderEvent event = new OrderEvent(
                 order.getOrderNumber(),
                 order.getOrderNumber(),
+                order.getTotalPrice(),
+                order.getCurrency(),
                 Instant.now(),
                 order.getOrderLineItems()
                         .stream()

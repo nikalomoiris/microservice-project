@@ -1,5 +1,6 @@
 package nik.kalomiris.events.dtos;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -13,14 +14,20 @@ public class OrderEvent {
      */
     private String orderNumber;
     private String correlationId;
+    private BigDecimal totalPrice;
+    private String currency;
     private Instant timestamp;
     private List<OrderLineItem> lineItems;
 
-    public OrderEvent() {}
+    public OrderEvent() {
+    }
 
-    public OrderEvent(String orderNumber, String correlationId, Instant timestamp, List<OrderLineItem> lineItems) {
+    public OrderEvent(String orderNumber, String correlationId, BigDecimal totalPrice, String currency,
+            Instant timestamp, List<OrderLineItem> lineItems) {
         this.orderNumber = orderNumber;
         this.correlationId = correlationId;
+        this.totalPrice = totalPrice;
+        this.currency = currency;
         this.timestamp = timestamp;
         this.lineItems = lineItems;
     }
@@ -47,6 +54,22 @@ public class OrderEvent {
 
     public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 
     public List<OrderLineItem> getLineItems() {
