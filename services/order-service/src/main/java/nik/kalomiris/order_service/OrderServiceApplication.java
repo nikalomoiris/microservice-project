@@ -10,6 +10,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * This class bootstraps the Spring context and triggers component scanning
  * under the base package `nik.kalomiris` so other microservice modules
  * (shared libraries, clients, etc.) are discovered.
+ *
+ * Quick flow reference:
+ * OrderController -> OrderService -> (OrderRepository + ProductServiceClient)
+ * -> RabbitMQ OrderEvent publish -> inventory-service processing
+ * -> InventoryEventListener consumes inventory events -> Order status update.
+ *
+ * Observability hooks in the flow:
+ * - structured logs via LogPublisher
+ * - tracing via Micrometer Tracer
+ * - metrics via OrderMetrics
  */
 public class OrderServiceApplication {
 

@@ -1,8 +1,9 @@
-package nik.kalomiris.payment_service.dto;
+package nik.kalomiris.payment_service.provider.dto;
 
-public class ProviderVoidResult {
+public class ProviderAuthResult {
 
     private boolean success;
+    private String intentId;
     private String errorCode;
     private String message;
     private FailureType failureType;
@@ -13,6 +14,14 @@ public class ProviderVoidResult {
 
     public void setSuccess(boolean success) {
         this.success = success;
+    }
+
+    public String getIntentId() {
+        return intentId;
+    }
+
+    public void setIntentId(String intentId) {
+        this.intentId = intentId;
     }
 
     public String getErrorCode() {
@@ -48,19 +57,29 @@ public class ProviderVoidResult {
     }
 
     public static class SuccessBuilder {
+        private String intentId;
         private String message;
+
+        public SuccessBuilder withIntentId(String intentId) {
+            this.intentId = intentId;
+            return this;
+        }
 
         public SuccessBuilder withMessage(String message) {
             this.message = message;
             return this;
         }
 
-        public ProviderVoidResult build() {
+        public ProviderAuthResult build() {
             if (this.message == null) {
-                throw new IllegalStateException("Message must be provided for a successful void result");
+                throw new IllegalStateException("Message must be provided for a successful authorization result");
             }
-            ProviderVoidResult result = new ProviderVoidResult();
+            if (this.intentId == null) {
+                throw new IllegalStateException("Intent ID must be provided for a successful authorization result");
+            }
+            ProviderAuthResult result = new ProviderAuthResult();
             result.setSuccess(true);
+            result.setIntentId(intentId);
             result.setMessage(message);
             return result;
         }
@@ -86,17 +105,17 @@ public class ProviderVoidResult {
             return this;
         }
 
-        public ProviderVoidResult build() {
+        public ProviderAuthResult build() {
             if (this.message == null) {
-                throw new IllegalStateException("Message must be provided for a failed void result");
+                throw new IllegalStateException("Message must be provided for a failed authorization result");
             }
             if (this.errorCode == null) {
-                throw new IllegalStateException("Error code must be provided for a failed void result");
+                throw new IllegalStateException("Error code must be provided for a failed authorization result");
             }
             if (this.failureType == null) {
-                throw new IllegalStateException("Failure type must be provided for a failed void result");
+                throw new IllegalStateException("Failure type must be provided for a failed authorization result");
             }
-            ProviderVoidResult result = new ProviderVoidResult();
+            ProviderAuthResult result = new ProviderAuthResult();
             result.setSuccess(false);
             result.setErrorCode(errorCode);
             result.setMessage(message);

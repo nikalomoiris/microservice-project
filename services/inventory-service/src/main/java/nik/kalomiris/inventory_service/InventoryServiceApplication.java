@@ -9,6 +9,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * Bootstraps Spring and configures component scanning under `nik.kalomiris` so
  * shared libraries and cross-service components are discovered.
+ *
+ * Quick flow reference:
+ * RabbitMQ order events -> OrderEventListener -> InventoryService
+ * -> InventoryRepository updates (reserve/commit/release)
+ * -> RabbitMQ inventory outcome events back to order-service.
+ *
+ * Observability hooks in the flow:
+ * - structured logs via LogPublisher
+ * - tracing via Micrometer Tracer
  */
 public class InventoryServiceApplication {
 

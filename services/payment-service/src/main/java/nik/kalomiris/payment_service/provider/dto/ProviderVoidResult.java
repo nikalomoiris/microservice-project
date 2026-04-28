@@ -1,9 +1,8 @@
-package nik.kalomiris.payment_service.dto;
+package nik.kalomiris.payment_service.provider.dto;
 
-public class ProviderCaptureResult {
+public class ProviderVoidResult {
 
     private boolean success;
-    private String captureId;
     private String errorCode;
     private String message;
     private FailureType failureType;
@@ -14,14 +13,6 @@ public class ProviderCaptureResult {
 
     public void setSuccess(boolean success) {
         this.success = success;
-    }
-
-    public String getCaptureId() {
-        return captureId;
-    }
-
-    public void setCaptureId(String captureId) {
-        this.captureId = captureId;
     }
 
     public String getErrorCode() {
@@ -57,29 +48,19 @@ public class ProviderCaptureResult {
     }
 
     public static class SuccessBuilder {
-        private String captureId;
         private String message;
-
-        public SuccessBuilder withCaptureId(String captureId) {
-            this.captureId = captureId;
-            return this;
-        }
 
         public SuccessBuilder withMessage(String message) {
             this.message = message;
             return this;
         }
 
-        public ProviderCaptureResult build() {
+        public ProviderVoidResult build() {
             if (this.message == null) {
-                throw new IllegalStateException("Message must be provided for a successful capture result");
+                throw new IllegalStateException("Message must be provided for a successful void result");
             }
-            if (this.captureId == null) {
-                throw new IllegalStateException("Capture ID must be provided for a successful capture result");
-            }
-            ProviderCaptureResult result = new ProviderCaptureResult();
+            ProviderVoidResult result = new ProviderVoidResult();
             result.setSuccess(true);
-            result.setCaptureId(captureId);
             result.setMessage(message);
             return result;
         }
@@ -105,17 +86,17 @@ public class ProviderCaptureResult {
             return this;
         }
 
-        public ProviderCaptureResult build() {
+        public ProviderVoidResult build() {
             if (this.message == null) {
-                throw new IllegalStateException("Message must be provided for a failed capture result");
+                throw new IllegalStateException("Message must be provided for a failed void result");
             }
             if (this.errorCode == null) {
-                throw new IllegalStateException("Error code must be provided for a failed capture result");
+                throw new IllegalStateException("Error code must be provided for a failed void result");
             }
             if (this.failureType == null) {
-                throw new IllegalStateException("Failure type must be provided for a failed capture result");
+                throw new IllegalStateException("Failure type must be provided for a failed void result");
             }
-            ProviderCaptureResult result = new ProviderCaptureResult();
+            ProviderVoidResult result = new ProviderVoidResult();
             result.setSuccess(false);
             result.setErrorCode(errorCode);
             result.setMessage(message);

@@ -153,7 +153,7 @@ public class Payment {
     public static class Builder {
         private String orderId;
         private BigDecimal amount;
-        private String currency;
+        private String currency = "USD"; // Default to USD
         private PaymentStatus status = PaymentStatus.CREATED; // Default to CREATED
         private String providerIntentId;
         private int retryCount = 0; // Default to 0

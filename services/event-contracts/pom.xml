@@ -9,9 +9,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <groupId>nik.kalomiris</groupId>
     <artifactId>event-contracts</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>event-contracts</name>
 

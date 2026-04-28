@@ -1,4 +1,4 @@
-package nik.kalomiris.payment_service.dto;
+package nik.kalomiris.payment_service.provider.dto;
 
 public class ProviderRefundResult {
 

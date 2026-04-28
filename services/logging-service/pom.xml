@@ -11,9 +11,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <groupId>nik.kalomiris</groupId>
     <artifactId>logging-service</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
     <name>logging-service</name>
 
     <properties>

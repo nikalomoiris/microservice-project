@@ -2,10 +2,10 @@ package nik.kalomiris.payment_service.provider;
 
 import java.math.BigDecimal;
 import nik.kalomiris.payment_service.domain.Payment;
-import nik.kalomiris.payment_service.dto.ProviderAuthResult;
-import nik.kalomiris.payment_service.dto.ProviderCaptureResult;
-import nik.kalomiris.payment_service.dto.ProviderRefundResult;
-import nik.kalomiris.payment_service.dto.ProviderVoidResult;
+import nik.kalomiris.payment_service.provider.dto.ProviderAuthResult;
+import nik.kalomiris.payment_service.provider.dto.ProviderCaptureResult;
+import nik.kalomiris.payment_service.provider.dto.ProviderRefundResult;
+import nik.kalomiris.payment_service.provider.dto.ProviderVoidResult;
 
 public interface PaymentProvider {
     ProviderAuthResult authorize(Payment payment);

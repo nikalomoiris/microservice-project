@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * REST controller exposing order-related endpoints.
  *
- * Currently exposes a single POST endpoint to create orders. The controller
+ * Currently, exposes a single POST endpoint to create orders. The controller
  * delegates business logic to {@code OrderService} and returns a simple
  * confirmation message. Keep controllers thin — no business logic here.
  */

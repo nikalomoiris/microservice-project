@@ -11,6 +11,14 @@ import org.springframework.context.annotation.ComponentScan;
 	 *
 	 * Boots the Spring context and sets up controllers, repositories and
 	 * message listeners that manage product lifecycle and images.
+	 *
+	 * Quick flow reference:
+	 * ProductController -> ProductService -> ProductRepository/Image storage
+	 * -> publish product.created event to RabbitMQ for inventory bootstrap.
+	 *
+	 * Observability hooks in the flow:
+	 * - structured logs via LogPublisher
+	 * - tracing via Micrometer Tracer
 	 */
 public class ProductServiceApplication {
 

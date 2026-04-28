@@ -2,10 +2,10 @@ package nik.kalomiris.payment_service.provider;
 
 import java.math.BigDecimal;
 
+import nik.kalomiris.payment_service.provider.dto.*;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import nik.kalomiris.payment_service.domain.Payment;
-import nik.kalomiris.payment_service.dto.*;
 
 @ConditionalOnProperty(name = "payment.provider", havingValue = "mock")
 public class MockPaymentProvider implements PaymentProvider {

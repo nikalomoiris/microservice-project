@@ -1,9 +1,9 @@
-package nik.kalomiris.payment_service.dto;
+package nik.kalomiris.payment_service.provider.dto;
 
-public class ProviderAuthResult {
+public class ProviderCaptureResult {
 
     private boolean success;
-    private String intentId;
+    private String captureId;
     private String errorCode;
     private String message;
     private FailureType failureType;
@@ -16,12 +16,12 @@ public class ProviderAuthResult {
         this.success = success;
     }
 
-    public String getIntentId() {
-        return intentId;
+    public String getCaptureId() {
+        return captureId;
     }
 
-    public void setIntentId(String intentId) {
-        this.intentId = intentId;
+    public void setCaptureId(String captureId) {
+        this.captureId = captureId;
     }
 
     public String getErrorCode() {
@@ -57,11 +57,11 @@ public class ProviderAuthResult {
     }
 
     public static class SuccessBuilder {
-        private String intentId;
+        private String captureId;
         private String message;
 
-        public SuccessBuilder withIntentId(String intentId) {
-            this.intentId = intentId;
+        public SuccessBuilder withCaptureId(String captureId) {
+            this.captureId = captureId;
             return this;
         }
 
@@ -70,16 +70,16 @@ public class ProviderAuthResult {
             return this;
         }
 
-        public ProviderAuthResult build() {
+        public ProviderCaptureResult build() {
             if (this.message == null) {
-                throw new IllegalStateException("Message must be provided for a successful authorization result");
+                throw new IllegalStateException("Message must be provided for a successful capture result");
             }
-            if (this.intentId == null) {
-                throw new IllegalStateException("Intent ID must be provided for a successful authorization result");
+            if (this.captureId == null) {
+                throw new IllegalStateException("Capture ID must be provided for a successful capture result");
             }
-            ProviderAuthResult result = new ProviderAuthResult();
+            ProviderCaptureResult result = new ProviderCaptureResult();
             result.setSuccess(true);
-            result.setIntentId(intentId);
+            result.setCaptureId(captureId);
             result.setMessage(message);
             return result;
         }
@@ -105,17 +105,17 @@ public class ProviderAuthResult {
             return this;
         }
 
-        public ProviderAuthResult build() {
+        public ProviderCaptureResult build() {
             if (this.message == null) {
-                throw new IllegalStateException("Message must be provided for a failed authorization result");
+                throw new IllegalStateException("Message must be provided for a failed capture result");
             }
             if (this.errorCode == null) {
-                throw new IllegalStateException("Error code must be provided for a failed authorization result");
+                throw new IllegalStateException("Error code must be provided for a failed capture result");
             }
             if (this.failureType == null) {
-                throw new IllegalStateException("Failure type must be provided for a failed authorization result");
+                throw new IllegalStateException("Failure type must be provided for a failed capture result");
             }
-            ProviderAuthResult result = new ProviderAuthResult();
+            ProviderCaptureResult result = new ProviderCaptureResult();
             result.setSuccess(false);
             result.setErrorCode(errorCode);
             result.setMessage(message);
