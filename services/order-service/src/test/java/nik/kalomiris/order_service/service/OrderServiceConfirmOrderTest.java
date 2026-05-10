@@ -18,7 +18,7 @@ import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderLineItem;
 import nik.kalomiris.order_service.domain.OrderStatus;
 import nik.kalomiris.order_service.repository.OrderRepository;
-import nik.kalomiris.events.dtos.OrderEvent;
+import nik.kalomiris.events.dtos.OrderCreatedEvent;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,10 +75,10 @@ class OrderServiceConfirmOrderTest {
         assertEquals(OrderStatus.CONFIRMED, order.getStatus());
         verify(orderRepository).save(order);
 
-        ArgumentCaptor<OrderEvent> eventCaptor = ArgumentCaptor.forClass(OrderEvent.class);
+        ArgumentCaptor<OrderCreatedEvent> eventCaptor = ArgumentCaptor.forClass(OrderCreatedEvent.class);
         verify(rabbitTemplate).convertAndSend(eq(RabbitMQConfig.EXCHANGE_NAME),
                 eq(RabbitMQConfig.ROUTING_KEY_ORDER_CONFIRMED), eventCaptor.capture());
-        OrderEvent sent = eventCaptor.getValue();
+        OrderCreatedEvent sent = eventCaptor.getValue();
         assertEquals(order.getOrderNumber(), sent.getOrderNumber());
 
         // verify logging attempted

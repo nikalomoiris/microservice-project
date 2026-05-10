@@ -6,8 +6,10 @@ import nik.kalomiris.payment_service.provider.dto.*;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import nik.kalomiris.payment_service.domain.Payment;
+import org.springframework.stereotype.Component;
 
 @ConditionalOnProperty(name = "payment.provider", havingValue = "mock")
+@Component
 public class MockPaymentProvider implements PaymentProvider {
 
     private static final String INTENT_ID_PREFIX = "mock_intent_";
@@ -38,37 +40,28 @@ public class MockPaymentProvider implements PaymentProvider {
     public ProviderAuthResult authorize(Payment payment) {
         char lastDigit = getLastDigit(payment.getAmount());
 
-        switch (lastDigit) {
-            case '0', '1', '2', '3':
-                return ProviderAuthResult.success()
-                        .withIntentId(INTENT_ID_PREFIX + payment.getId())
-                        .withMessage(AUTH_SUCCESS_MESSAGE + lastDigit)
-                        .build();
-
-            case '4', '5':
-                return ProviderAuthResult.failure()
-                        .withErrorCode("CARD_DECLINED")
-                        .withFailureType(FailureType.PERMANENT)
-                        .withMessage(AUTH_FAILED_MESSAGE + lastDigit)
-                        .build();
-
-            case '6', '7':
-                return ProviderAuthResult.failure()
-                        .withErrorCode(TIMEOUT_ERROR_CODE)
-                        .withFailureType(FailureType.TRANSIENT)
-                        .withMessage(AUTH_FAILED_MESSAGE + lastDigit)
-                        .build();
-
-            case '8', '9':
-                return ProviderAuthResult.failure()
-                        .withErrorCode(PROVIDER_UNAVAILABLE_ERROR_CODE)
-                        .withFailureType(FailureType.TRANSIENT)
-                        .withMessage(AUTH_FAILED_MESSAGE + lastDigit)
-                        .build();
-
-            default:
-                throw new IllegalStateException("Unexpected last digit: " + lastDigit);
-        }
+        return switch (lastDigit) {
+            case '0', '1', '2', '3' -> ProviderAuthResult.success()
+                    .withIntentId(INTENT_ID_PREFIX + payment.getId())
+                    .withMessage(AUTH_SUCCESS_MESSAGE + lastDigit)
+                    .build();
+            case '4', '5' -> ProviderAuthResult.failure()
+                    .withErrorCode("CARD_DECLINED")
+                    .withFailureType(FailureType.PERMANENT)
+                    .withMessage(AUTH_FAILED_MESSAGE + lastDigit)
+                    .build();
+            case '6', '7' -> ProviderAuthResult.failure()
+                    .withErrorCode(TIMEOUT_ERROR_CODE)
+                    .withFailureType(FailureType.TRANSIENT)
+                    .withMessage(AUTH_FAILED_MESSAGE + lastDigit)
+                    .build();
+            case '8', '9' -> ProviderAuthResult.failure()
+                    .withErrorCode(PROVIDER_UNAVAILABLE_ERROR_CODE)
+                    .withFailureType(FailureType.TRANSIENT)
+                    .withMessage(AUTH_FAILED_MESSAGE + lastDigit)
+                    .build();
+            default -> throw new IllegalStateException("Unexpected last digit: " + lastDigit);
+        };
     }
 
     @Override

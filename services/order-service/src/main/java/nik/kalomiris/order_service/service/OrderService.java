@@ -11,7 +11,7 @@ import nik.kalomiris.order_service.config.RabbitMQConfig;
 import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderLineItem;
 import nik.kalomiris.order_service.domain.OrderStatus;
-import nik.kalomiris.events.dtos.OrderEvent;
+import nik.kalomiris.events.dtos.OrderCreatedEvent;
 import nik.kalomiris.order_service.dto.OrderRequest;
 import nik.kalomiris.order_service.dto.ProductPrice;
 import nik.kalomiris.order_service.mapper.OrderMapper;
@@ -137,7 +137,7 @@ public class OrderService {
             throw e;
         }
 
-        OrderEvent event = new OrderEvent(
+        OrderCreatedEvent event = new OrderCreatedEvent(
                 order.getOrderNumber(),
                 order.getOrderNumber(),
                 order.getTotalPrice(),
@@ -221,7 +221,7 @@ public class OrderService {
             throw e;
         }
 
-        OrderEvent event = new OrderEvent(
+        OrderCreatedEvent event = new OrderCreatedEvent(
                 order.getOrderNumber(),
                 order.getOrderNumber(),
                 order.getTotalPrice(),

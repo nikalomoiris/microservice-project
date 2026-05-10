@@ -4,7 +4,7 @@ import nik.kalomiris.inventory_service.InventoryService;
 import nik.kalomiris.inventory_service.config.RabbitMQConfig;
 import nik.kalomiris.events.dtos.InventoryReservationFailedEvent;
 import nik.kalomiris.events.dtos.InventorySuccessEvent;
-import nik.kalomiris.events.dtos.OrderEvent;
+import nik.kalomiris.events.dtos.OrderCreatedEvent;
 import nik.kalomiris.events.dtos.OrderLineItem;
 
 import java.time.Instant;
@@ -39,11 +39,11 @@ public class OrderEventListener {
     }
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_CREATED_QUEUE_NAME)
-    public void handleOrderCreatedEvent(OrderEvent orderEvent) {
-        logger.info("Received order created event for orderNumber: {}", orderEvent.getOrderNumber());
+    public void handleOrderCreatedEvent(OrderCreatedEvent orderCreatedEvent) {
+        logger.info("Received order created event for orderNumber: {}", orderCreatedEvent.getOrderNumber());
         List<OrderLineItem> reservedItems = new ArrayList<>();
             try {
-                for (OrderLineItem item : orderEvent.getLineItems()) {
+                for (OrderLineItem item : orderCreatedEvent.getLineItems()) {
                     try {
                         inventoryService.reserveStock(item.getProductId(), item.getQuantity());
                         reservedItems.add(new OrderLineItem(item.getProductId(), item.getQuantity()));
@@ -52,8 +52,8 @@ public class OrderEventListener {
                         logger.error("Failed to reserve stock for product ID: {}. Reason: {}", item.getProductId(), e.getMessage());
                         // Publish a failure event with reason and attempted items
                         InventoryReservationFailedEvent failedEvent = new InventoryReservationFailedEvent(
-                            orderEvent.getOrderNumber(),
-                            orderEvent.getCorrelationId(),
+                            orderCreatedEvent.getOrderNumber(),
+                            orderCreatedEvent.getCorrelationId(),
                             Instant.now(),
                             "Failed to reserve productId " + item.getProductId() + ": " + e.getMessage(),
                             reservedItems
@@ -65,18 +65,18 @@ public class OrderEventListener {
 
                 // If we get here, all items were reserved
                 InventorySuccessEvent successEvent = new InventorySuccessEvent(
-                        orderEvent.getOrderNumber(),
-                        orderEvent.getCorrelationId(),
+                        orderCreatedEvent.getOrderNumber(),
+                        orderCreatedEvent.getCorrelationId(),
                         Instant.now(),
                         reservedItems
                     );
                     rabbitTemplate.convertAndSend(RabbitMQConfig.ORDER_EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_ORDER_INVENTORY_RESERVED, successEvent);
             
             } catch (Exception e) {
-                logger.error("Unexpected error while processing orderNumber {}: {}", orderEvent.getOrderNumber(), e.getMessage());
+                logger.error("Unexpected error while processing orderNumber {}: {}", orderCreatedEvent.getOrderNumber(), e.getMessage());
                 InventoryReservationFailedEvent failedEvent = new InventoryReservationFailedEvent(
-                    orderEvent.getOrderNumber(),
-                    orderEvent.getCorrelationId(),
+                    orderCreatedEvent.getOrderNumber(),
+                    orderCreatedEvent.getCorrelationId(),
                     Instant.now(),
                     "Unexpected error: " + e.getMessage(),
                     reservedItems
@@ -86,25 +86,25 @@ public class OrderEventListener {
     }
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_CONFIRMED_QUEUE_NAME)
-    public void handleOrderConfirmedEvent(OrderEvent orderEvent) {
-        logger.info("Received order confirmed event for orderNumber: {}", orderEvent.getOrderNumber());
+    public void handleOrderConfirmedEvent(OrderCreatedEvent orderCreatedEvent) {
+        logger.info("Received order confirmed event for orderNumber: {}", orderCreatedEvent.getOrderNumber());
         // Try to commit the reserved stock. If commit fails, log error. If commit succeeds, send message to confirm.
         List<OrderLineItem> committedItems = new ArrayList<>();
         try {
-            for (OrderLineItem item : orderEvent.getLineItems()) {
+            for (OrderLineItem item : orderCreatedEvent.getLineItems()) {
                 inventoryService.commitStock(item.getProductId(), item.getQuantity());
                 logger.info("Committed stock for product ID: {} quantity: {}", item.getProductId(), item.getQuantity());
                 committedItems.add(item);
             }
             InventorySuccessEvent committedEvent = new InventorySuccessEvent(
-                orderEvent.getOrderNumber(),
-                orderEvent.getCorrelationId(),
+                orderCreatedEvent.getOrderNumber(),
+                orderCreatedEvent.getCorrelationId(),
                 Instant.now(),
                 committedItems
             );
             rabbitTemplate.convertAndSend(RabbitMQConfig.ORDER_EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_ORDER_INVENTORY_COMMITTED, committedEvent);
         } catch (Exception e) {
-            logger.error("Failed to commit stock for orderNumber {}: {}", orderEvent.getOrderNumber(), e.getMessage());
+            logger.error("Failed to commit stock for orderNumber {}: {}", orderCreatedEvent.getOrderNumber(), e.getMessage());
         }
     }
 }

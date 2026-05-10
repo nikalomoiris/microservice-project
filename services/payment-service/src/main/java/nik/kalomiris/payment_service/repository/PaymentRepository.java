@@ -1,6 +1,7 @@
 package nik.kalomiris.payment_service.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,8 +12,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByOrderId(String orderId);
 
-    Optional<Payment> findByStatusAndRetryCountLessThan(PaymentStatus status, int maxRetryCount);
+    List<Payment> findByStatusAndRetryCountLessThan(PaymentStatus status, int maxRetryCount);
 
-    Optional<Payment> findByStatusAndCreatedAtBefore(PaymentStatus status, LocalDateTime cutoffTime);
+    List<Payment> findByStatusAndCreatedAtBefore(PaymentStatus status, LocalDateTime cutoffTime);
 
 }

@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
-public class OrderEvent {
+public class OrderCreatedEvent {
     /**
      * Event published when an order is created.
      *
@@ -19,11 +19,11 @@ public class OrderEvent {
     private Instant timestamp;
     private List<OrderLineItem> lineItems;
 
-    public OrderEvent() {
+    public OrderCreatedEvent() {
     }
 
-    public OrderEvent(String orderNumber, String correlationId, BigDecimal totalPrice, String currency,
-            Instant timestamp, List<OrderLineItem> lineItems) {
+    public OrderCreatedEvent(String orderNumber, String correlationId, BigDecimal totalPrice, String currency,
+                             Instant timestamp, List<OrderLineItem> lineItems) {
         this.orderNumber = orderNumber;
         this.correlationId = correlationId;
         this.totalPrice = totalPrice;
