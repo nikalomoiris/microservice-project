@@ -1,4 +1,4 @@
-package nik.kalomiris.events.dtos;
+package nik.kalomiris.event_contracts.dtos;
 
 import java.time.Instant;
 import java.util.List;

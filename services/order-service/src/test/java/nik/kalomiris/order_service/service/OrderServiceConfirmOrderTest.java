@@ -18,7 +18,7 @@ import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderLineItem;
 import nik.kalomiris.order_service.domain.OrderStatus;
 import nik.kalomiris.order_service.repository.OrderRepository;
-import nik.kalomiris.events.dtos.OrderCreatedEvent;
+import nik.kalomiris.event_contracts.dtos.OrderCreatedEvent;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

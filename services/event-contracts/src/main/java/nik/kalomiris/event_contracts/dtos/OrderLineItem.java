@@ -1,4 +1,4 @@
-package nik.kalomiris.events.dtos;
+package nik.kalomiris.event_contracts.dtos;
 
 public class OrderLineItem {
     /**

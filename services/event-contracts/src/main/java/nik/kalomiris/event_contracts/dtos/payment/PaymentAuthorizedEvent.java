@@ -1,4 +1,4 @@
-package nik.kalomiris.events.dtos.payment;
+package nik.kalomiris.event_contracts.dtos.payment;
 
 import java.math.BigDecimal;
 

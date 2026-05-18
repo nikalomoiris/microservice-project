@@ -11,7 +11,7 @@ import nik.kalomiris.order_service.config.RabbitMQConfig;
 import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderLineItem;
 import nik.kalomiris.order_service.domain.OrderStatus;
-import nik.kalomiris.events.dtos.OrderCreatedEvent;
+import nik.kalomiris.event_contracts.dtos.OrderCreatedEvent;
 import nik.kalomiris.order_service.dto.OrderRequest;
 import nik.kalomiris.order_service.dto.ProductPrice;
 import nik.kalomiris.order_service.mapper.OrderMapper;
@@ -145,7 +145,7 @@ public class OrderService {
                 Instant.now(),
                 order.getOrderLineItems()
                         .stream()
-                        .map(li -> new nik.kalomiris.events.dtos.OrderLineItem(li.getProductId(), li.getQuantity()))
+                        .map(li -> new nik.kalomiris.event_contracts.dtos.OrderLineItem(li.getProductId(), li.getQuantity()))
                         .toList());
 
         // Ensure we publish the event only after the database transaction commits so
@@ -229,7 +229,7 @@ public class OrderService {
                 Instant.now(),
                 order.getOrderLineItems()
                         .stream()
-                        .map(li -> new nik.kalomiris.events.dtos.OrderLineItem(li.getProductId(), li.getQuantity()))
+                        .map(li -> new nik.kalomiris.event_contracts.dtos.OrderLineItem(li.getProductId(), li.getQuantity()))
                         .toList());
 
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_ORDER_CONFIRMED, event);

@@ -2,10 +2,10 @@ package nik.kalomiris.inventory_service.listeners;
 
 import nik.kalomiris.inventory_service.InventoryService;
 import nik.kalomiris.inventory_service.config.RabbitMQConfig;
-import nik.kalomiris.events.dtos.InventoryReservationFailedEvent;
-import nik.kalomiris.events.dtos.InventorySuccessEvent;
-import nik.kalomiris.events.dtos.OrderCreatedEvent;
-import nik.kalomiris.events.dtos.OrderLineItem;
+import nik.kalomiris.event_contracts.dtos.InventoryReservationFailedEvent;
+import nik.kalomiris.event_contracts.dtos.InventorySuccessEvent;
+import nik.kalomiris.event_contracts.dtos.OrderCreatedEvent;
+import nik.kalomiris.event_contracts.dtos.OrderLineItem;
 
 import java.time.Instant;
 import java.util.ArrayList;

@@ -1,7 +1,7 @@
 package nik.kalomiris.product_service.product;
 
 import nik.kalomiris.product_service.config.RabbitMQConfig;
-import nik.kalomiris.events.dtos.ProductCreatedEvent;
+import nik.kalomiris.event_contracts.dtos.ProductCreatedEvent;
 import nik.kalomiris.logging_client.LogPublisher;
 import nik.kalomiris.logging_client.LogMessage;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

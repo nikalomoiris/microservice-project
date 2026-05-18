@@ -1,23 +1,33 @@
-package nik.kalomiris.events.dtos;
+package nik.kalomiris.event_contracts.dtos;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
-public class InventorySuccessEvent {
+public class OrderCreatedEvent {
     /**
-     * Event indicating inventory was successfully reserved/committed for an order.
-     * Consumers use this to progress order state (e.g., move to RESERVED).
+     * Event published when an order is created.
+     *
+     * This DTO is used as the integration contract between order-service and
+     * downstream services (inventory, shipping, etc.). Keep it small and
+     * backwards-compatible; consumers rely on these fields.
      */
     private String orderNumber;
     private String correlationId;
+    private BigDecimal totalPrice;
+    private String currency;
     private Instant timestamp;
     private List<OrderLineItem> lineItems;
 
-    public InventorySuccessEvent() {}
+    public OrderCreatedEvent() {
+    }
 
-    public InventorySuccessEvent(String orderNumber, String correlationId, Instant timestamp, List<OrderLineItem> lineItems) {
+    public OrderCreatedEvent(String orderNumber, String correlationId, BigDecimal totalPrice, String currency,
+                             Instant timestamp, List<OrderLineItem> lineItems) {
         this.orderNumber = orderNumber;
         this.correlationId = correlationId;
+        this.totalPrice = totalPrice;
+        this.currency = currency;
         this.timestamp = timestamp;
         this.lineItems = lineItems;
     }
@@ -44,6 +54,22 @@ public class InventorySuccessEvent {
 
     public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 
     public List<OrderLineItem> getLineItems() {

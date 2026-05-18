@@ -8,8 +8,8 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderStatus;
-import nik.kalomiris.events.dtos.InventorySuccessEvent;
-import nik.kalomiris.events.dtos.InventoryReservationFailedEvent;
+import nik.kalomiris.event_contracts.dtos.InventorySuccessEvent;
+import nik.kalomiris.event_contracts.dtos.InventoryReservationFailedEvent;
 import nik.kalomiris.order_service.repository.OrderRepository;
 import org.junit.jupiter.api.Test;
 
