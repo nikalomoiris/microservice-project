@@ -1,7 +1,8 @@
 package nik.kalomiris.payment_service.service;
 
-import nik.kalomiris.logging_client.LogMessage;
-import nik.kalomiris.logging_client.LogPublisher;
+import nik.kalomiris.event_contracts.dtos.payment.PaymentAuthorizationFailedEvent;
+import nik.kalomiris.event_contracts.dtos.payment.PaymentAuthorizedEvent;
+import nik.kalomiris.event_contracts.routing.PaymentExchangeContracts;
 import nik.kalomiris.payment_service.domain.Payment;
 import nik.kalomiris.payment_service.domain.PaymentStatus;
 import nik.kalomiris.payment_service.dto.PaymentRequest;
@@ -11,14 +12,18 @@ import nik.kalomiris.payment_service.provider.dto.ProviderAuthResult;
 import nik.kalomiris.payment_service.repository.PaymentRepository;
 import nik.kalomiris.payment_service.util.Logger;
 import nik.kalomiris.payment_service.util.PaymentStatusTransitions;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
@@ -27,6 +32,7 @@ public class PaymentService {
     private final PaymentProvider paymentProvider;
     private final PaymentStatusTransitions paymentStatusTransitions;
     private final Logger logger;
+    private final RabbitTemplate rabbitTemplate;
     @Value("${payment.retry.max-attempts}")
     private int maxRetries;
 
@@ -36,7 +42,8 @@ public class PaymentService {
             RetryTemplate retryTemplate,
             PaymentProvider paymentProvider,
             PaymentStatusTransitions paymentStatusTransitions,
-            Logger logger
+            Logger logger,
+            RabbitTemplate rabbitTemplate
     ){
         this.paymentRepository = paymentRepository;
         this.paymentMapper = paymentMapper;
@@ -44,9 +51,9 @@ public class PaymentService {
         this.paymentProvider = paymentProvider;
         this.paymentStatusTransitions = paymentStatusTransitions;
         this.logger = logger;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
-    //TODO Implement event publishing
     public void createPayment(PaymentRequest paymentRequest) {
 
         Optional<Payment> existingPayment = paymentRepository.findByOrderId(paymentRequest.getOrderId());
@@ -61,7 +68,11 @@ public class PaymentService {
         paymentRepository.save(payment);
 
         try {
-            logger.publishLog(this.getClass().getSimpleName(), "INFO", "Creating payment for order " + payment.getOrderId(), payment);
+            logger.publishLog(this.getClass().getSimpleName(),
+                    "INFO",
+                    "Creating payment for order " + payment.getOrderId(),
+                    payment
+            );
         } catch (Exception e) {
             // Ignore logging failures
         }
@@ -81,11 +92,62 @@ public class PaymentService {
                     payment.setStatus(PaymentStatus.AUTHORIZED);
                     payment.setProviderIntentId(authResult.getIntentId());
                     paymentRepository.save(payment);
+
+                    PaymentAuthorizedEvent event = new PaymentAuthorizedEvent(
+                            payment.getOrderId(),
+                            authResult.getIntentId(),
+                            payment.getAmount()
+                    );
+
+                    if(TransactionSynchronizationManager.isSynchronizationActive()) {
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                            @Override
+                            public void afterCommit() {
+                                // Publish the event after the transaction commits
+                                        rabbitTemplate.convertAndSend(
+                                                PaymentExchangeContracts.EXCHANGE_NAME,
+                                                PaymentExchangeContracts.ROUTING_KEY_PAYMENT_AUTHORIZED,
+                                                event
+                                        );
+                            }
+                        });
+                    }
+                }
+            } else {
+                if (paymentStatusTransitions.canTransitionTo(payment.getStatus(), PaymentStatus.FAILED)) {
+                    payment.setStatus(PaymentStatus.FAILED);
+                    payment.setProviderIntentId(authResult.getIntentId());
+                    paymentRepository.save(payment);
+
+                    PaymentAuthorizationFailedEvent event = new PaymentAuthorizationFailedEvent(
+                            payment.getOrderId(),
+                            authResult.getIntentId(),
+                            payment.getAmount(),
+                            authResult.getMessage()
+                    );
+
+                    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                            @Override
+                            public void afterCommit() {
+                                rabbitTemplate.convertAndSend(
+                                        PaymentExchangeContracts.EXCHANGE_NAME,
+                                        PaymentExchangeContracts.ROUTING_KEY_PAYMENT_AUTHORIZATION_FAILED,
+                                        event
+                                );
+                            }
+                        });
+                    }
                 }
             }
 
             try {
-                logger.publishLog(this.getClass().getSimpleName(), "INFO", "Payment authorization successful", payment);
+                logger.publishLog(
+                        this.getClass().getSimpleName(),
+                        "INFO",
+                        "Payment authorization successful",
+                        payment
+                );
             } catch (Exception e) {
                 // Ignore logging failures
             }
@@ -99,7 +161,11 @@ public class PaymentService {
             }
 
             try {
-                logger.publishLog(this.getClass().getSimpleName(), "WARN", "Payment authorization not successful", payment);
+                logger.publishLog(this.getClass().getSimpleName(),
+                        "WARN",
+                        "Payment authorization not successful",
+                        payment
+                );
             } catch (Exception exception) {
                 // Ignore logging failures
             }
