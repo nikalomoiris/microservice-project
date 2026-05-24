@@ -11,7 +11,6 @@ import nik.kalomiris.product_service.image.Image;
 import nik.kalomiris.product_service.image.ImageRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
@@ -36,24 +35,14 @@ public class ProductService {
     private final ImageRepository imageRepository;
     private final RabbitTemplate rabbitTemplate;
     private final LogPublisher logPublisher;
-    private final nik.kalomiris.product_service.metrics.ProductMetrics productMetrics;
 
-    @Autowired
     public ProductService(ProductRepository productRepository, ProductMapper productMapper,
-            ImageRepository imageRepository, RabbitTemplate rabbitTemplate, LogPublisher logPublisher,
-            nik.kalomiris.product_service.metrics.ProductMetrics productMetrics) {
+            ImageRepository imageRepository, RabbitTemplate rabbitTemplate, LogPublisher logPublisher) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.imageRepository = imageRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.logPublisher = logPublisher;
-        this.productMetrics = productMetrics;
-    }
-
-    // Backward-compatible constructor without metrics
-    public ProductService(ProductRepository productRepository, ProductMapper productMapper,
-            ImageRepository imageRepository, RabbitTemplate rabbitTemplate, LogPublisher logPublisher) {
-        this(productRepository, productMapper, imageRepository, rabbitTemplate, logPublisher, null);
     }
 
     /**
@@ -149,15 +138,6 @@ public class ProductService {
             logPublisher.publish(logMessage);
         } catch (Exception e) {
             // ignore logging failures
-        }
-
-        // Metrics: increment created counter and update last-added timestamp
-        try {
-            if (productMetrics != null) {
-                productMetrics.markProductAdded();
-            }
-        } catch (Exception ignored) {
-            /* metrics update is best-effort and should not affect business flow */
         }
 
         return productMapper.toDto(savedProduct);

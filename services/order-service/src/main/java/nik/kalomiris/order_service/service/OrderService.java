@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 import nik.kalomiris.logging_client.LogPublisher;
 import nik.kalomiris.logging_client.LogMessage;
+import nik.kalomiris.order_service.service.ProductServiceClient;
 import nik.kalomiris.order_service.config.RabbitMQConfig;
 import nik.kalomiris.order_service.domain.Order;
 import nik.kalomiris.order_service.domain.OrderLineItem;
@@ -19,20 +20,15 @@ import nik.kalomiris.order_service.repository.OrderRepository;
 import nik.kalomiris.order_service.util.OrderStatusTransitions;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import io.micrometer.tracing.Tracer;
-import io.micrometer.tracing.Span;
-import nik.kalomiris.order_service.metrics.OrderMetrics;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @Transactional
 public class OrderService {
-    private static final String FAILED_OPERATION_TAG = "failed_operation";
-
     /**
      * Service responsible for creating orders and coordinating side effects
      * such as publishing integration events and emitting structured logs.
@@ -49,8 +45,6 @@ public class OrderService {
     private final ProductServiceClient productServiceClient;
     private final RabbitTemplate rabbitTemplate;
     private final LogPublisher logPublisher;
-    private final Tracer tracer;
-    private final OrderMetrics orderMetrics;
 
     @Autowired
     public OrderService(
@@ -58,56 +52,28 @@ public class OrderService {
             OrderMapper orderMapper,
             ProductServiceClient productServiceClient,
             RabbitTemplate rabbitTemplate,
-            LogPublisher logPublisher,
-            @Autowired(required = false) Tracer tracer,
-            OrderMetrics orderMetrics) {
+            LogPublisher logPublisher) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
         this.productServiceClient = productServiceClient;
         this.rabbitTemplate = rabbitTemplate;
         this.logPublisher = logPublisher;
-        this.tracer = tracer;
-        this.orderMetrics = orderMetrics;
     }
 
-    // Backward-compatible constructor for tests that don't provide metrics
+    // Backward-compatible constructor for tests
     public OrderService(
             OrderRepository orderRepository,
             OrderMapper orderMapper,
             RabbitTemplate rabbitTemplate,
-            LogPublisher logPublisher,
-            @Autowired(required = false) Tracer tracer) {
-        this(orderRepository, orderMapper, null, rabbitTemplate, logPublisher, tracer, null);
+            LogPublisher logPublisher) {
+        this(orderRepository, orderMapper, null, rabbitTemplate, logPublisher);
     }
 
     public void createOrder(OrderRequest orderRequest) {
-        /**
-         * Create a new Order from the incoming request.
-         *
-         * Responsibilities:
-         * - validate required fields (productId present on line items)
-         * - persist the Order and its line items
-         * - publish an OrderEvent to RabbitMQ after successful commit
-         * - publish a log event (best-effort)
-         */
-        Span span = tracer != null ? tracer.currentSpan() : null;
-        if (span != null) {
-            span.tag("order.request.item_count", String.valueOf(orderRequest.getOrderLineItemsDtoList().size()));
-        }
-
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
 
-        // Validate line items contain productId
-        try {
-            validateLineItems(orderRequest);
-        } catch (Exception e) {
-            if (span != null) {
-                span.tag(FAILED_OPERATION_TAG, "validation");
-                span.error(e);
-            }
-            throw e;
-        }
+        validateLineItems(orderRequest);
 
         List<OrderLineItem> orderLineItems = orderRequest
                 .getOrderLineItemsDtoList()
@@ -127,15 +93,7 @@ public class OrderService {
 
         order.setTotalPrice(totalPrice);
 
-        try {
-            orderRepository.save(order);
-        } catch (Exception e) {
-            if (span != null) {
-                span.tag(FAILED_OPERATION_TAG, "save");
-                span.error(e);
-            }
-            throw e;
-        }
+        orderRepository.save(order);
 
         OrderCreatedEvent event = new OrderCreatedEvent(
                 order.getOrderNumber(),
@@ -175,50 +133,22 @@ public class OrderService {
                             String.valueOf(orderLineItems.size())))
                     .build();
             logPublisher.publish(logMessage);
-            if (span != null) {
-                span.tag("order.number", order.getOrderNumber());
-                span.tag("order.items", String.valueOf(orderLineItems.size()));
-            }
         } catch (Exception e) {
             // ignore logging failures
-        }
-
-        // Metrics: increment created counter and update last-created timestamp
-        try {
-            if (orderMetrics != null) {
-                orderMetrics.markOrderCreated();
-            }
-        } catch (Exception ignored) {
-            /* metrics update is best-effort and should not affect business flow */
         }
     }
 
     public void confirmOrder(String orderNumber) {
 
-        Span span = tracer != null ? tracer.currentSpan() : null;
-        Order order;
-        try {
-            order = orderRepository.findByOrderNumber(orderNumber)
-                    .orElseThrow(() -> new IllegalArgumentException("Order not found"));
-        } catch (Exception e) {
-            if (span != null) {
-                span.tag(FAILED_OPERATION_TAG, "find_order");
-                span.error(e);
-            }
-            throw e;
-        }
+        Order order = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
         if (OrderStatusTransitions.canTransitionTo(order.getStatus(), OrderStatus.CONFIRMED)) {
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepository.save(order);
         } else {
-            IllegalStateException e = new IllegalStateException(
+            throw new IllegalStateException(
                     "Cannot transition order to CONFIRMED from status: " + order.getStatus());
-            if (span != null) {
-                span.tag(FAILED_OPERATION_TAG, "status_transition");
-                span.error(e);
-            }
-            throw e;
         }
 
         OrderCreatedEvent event = new OrderCreatedEvent(
@@ -243,13 +173,8 @@ public class OrderService {
                     .metadata(Map.of("orderNumber", order.getOrderNumber()))
                     .build();
             logPublisher.publish(logMessage);
-            if (span != null) {
-                span.tag("order.number", order.getOrderNumber());
-                span.tag("order.status", order.getStatus().name());
-            }
         } catch (Exception e) {
             // ignore logging failures
-
         }
     }
 

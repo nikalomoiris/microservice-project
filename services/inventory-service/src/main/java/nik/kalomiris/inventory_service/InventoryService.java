@@ -14,7 +14,6 @@ import nik.kalomiris.inventory_service.exceptions.InventoryNotFoundException;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import nik.kalomiris.inventory_service.metrics.InventoryMetrics;
 
 @Service
 /**
@@ -36,14 +35,12 @@ public class InventoryService {
     private static final String LOGGER_NAME = "nik.kalomiris.inventory_service.InventoryService";
     private static final String PRODUCT_ID_KEY = "productId";
     private final ConcurrentHashMap<String, Object> createLocks = new ConcurrentHashMap<>();
-    private final InventoryMetrics inventoryMetrics;
 
     public InventoryService(InventoryRepository inventoryRepository, InventoryMapper inventoryMapper,
-            LogPublisher logPublisher, InventoryMetrics inventoryMetrics) {
+            LogPublisher logPublisher) {
         this.inventoryRepository = inventoryRepository;
         this.inventoryMapper = inventoryMapper;
         this.logPublisher = logPublisher;
-        this.inventoryMetrics = inventoryMetrics;
     }
 
     public Optional<InventoryDTO> getInventoryBySku(String sku) {
@@ -84,7 +81,6 @@ public class InventoryService {
                 // persist via JPA and flush to ensure immediate visibility
                 inventoryRepository.saveAndFlush(newInventory);
                 logger.info("Inventory saveAndFlush completed for sku={} productId={}", sku, productId);
-                safeMarkUpdated();
 
                 // publish informational logs without impacting business logic
                 // Publish a single informational log containing both sku and productId
@@ -138,7 +134,6 @@ public class InventoryService {
             if (inventory.getQuantity() - inventory.getReservedQuantity() >= amountToReserver) {
                 inventory.setReservedQuantity(inventory.getReservedQuantity() + amountToReserver);
                 inventoryRepository.save(inventory);
-                safeMarkUpdated();
 
                 // Publish a log event about the stock reservation. Ignore logging failures.
                 try {
@@ -169,7 +164,6 @@ public class InventoryService {
             if (inventory.getReservedQuantity() >= amountToRelease) {
                 inventory.setReservedQuantity(inventory.getReservedQuantity() - amountToRelease);
                 inventoryRepository.save(inventory);
-                safeMarkUpdated();
 
                 // Publish a log event about the stock release. Ignore logging failures.
                 try {
@@ -201,7 +195,6 @@ public class InventoryService {
                 inventory.setReservedQuantity(inventory.getReservedQuantity() - amountToCommit);
                 inventory.setQuantity(inventory.getQuantity() - amountToCommit);
                 inventoryRepository.save(inventory);
-                safeMarkUpdated();
 
                 // Publish a log event about the stock commit. Ignore logging failures.
                 try {
@@ -231,7 +224,6 @@ public class InventoryService {
             Inventory inventory = inventoryOpt.get();
             inventory.setQuantity(newQuantity);
             inventoryRepository.save(inventory);
-            safeMarkUpdated();
         } else {
             throw new InventoryNotFoundException("Inventory record not found for product ID: " + productId);
         }
@@ -243,16 +235,6 @@ public class InventoryService {
         } catch (Exception e) {
             // don't let logging failures affect business logic; keep a local warn log
             logger.warn("Failed to publish log message: {}", msg.getMessage());
-        }
-    }
-
-    private void safeMarkUpdated() {
-        try {
-            if (inventoryMetrics != null) {
-                inventoryMetrics.markUpdated();
-            }
-        } catch (Exception e) {
-            /* metrics update is best-effort and should not affect business flow */
         }
     }
 

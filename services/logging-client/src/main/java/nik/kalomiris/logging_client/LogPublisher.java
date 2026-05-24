@@ -19,15 +19,12 @@ public class LogPublisher {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final String topic;
     private final ObjectMapper objectMapper;
-    private final TraceContextExtractor traceExtractor;
 
     public LogPublisher(KafkaTemplate<String, String> kafkaTemplate,
-            @Value("${logging.topic.service-logs:service-logs}") String topic,
-            TraceContextExtractor traceExtractor) {
+            @Value("${logging.topic.service-logs:service-logs}") String topic) {
         this.kafkaTemplate = kafkaTemplate;
         this.topic = topic;
         this.objectMapper = new ObjectMapper();
-        this.traceExtractor = traceExtractor;
     }
 
     /**
@@ -47,25 +44,11 @@ public class LogPublisher {
      * @param logMessage The structured log message to publish
      */
     public void publish(LogMessage logMessage) {
-        // Auto-inject trace context when available and not already set
-        if (logMessage.getTraceId() == null) {
-            String traceId = traceExtractor != null ? traceExtractor.getTraceId() : null;
-            if (traceId != null) {
-                logMessage.setTraceId(traceId);
-            }
-        }
-        if (logMessage.getSpanId() == null) {
-            String spanId = traceExtractor != null ? traceExtractor.getSpanId() : null;
-            if (spanId != null) {
-                logMessage.setSpanId(spanId);
-            }
-        }
-        
         // No-op if kafkaTemplate is not available (e.g., in test environments)
         if (kafkaTemplate == null) {
             return;
         }
-        
+
         try {
             String jsonMessage = objectMapper.writeValueAsString(logMessage);
             kafkaTemplate.send(topic, jsonMessage);

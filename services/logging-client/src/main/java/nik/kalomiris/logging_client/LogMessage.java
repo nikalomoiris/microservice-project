@@ -18,8 +18,6 @@ public class LogMessage {
     private String message;
     private String logger;
     private String thread;
-    private String traceId;
-    private String spanId;
     private Map<String, Object> metadata;
 
     public LogMessage() {
@@ -81,22 +79,6 @@ public class LogMessage {
         this.thread = thread;
     }
 
-    public String getTraceId() {
-        return traceId;
-    }
-
-    public void setTraceId(String traceId) {
-        this.traceId = traceId;
-    }
-
-    public String getSpanId() {
-        return spanId;
-    }
-
-    public void setSpanId(String spanId) {
-        this.spanId = spanId;
-    }
-
     public Map<String, Object> getMetadata() {
         return metadata;
     }
@@ -130,16 +112,6 @@ public class LogMessage {
 
         public Builder logger(String logger) {
             logMessage.setLogger(logger);
-            return this;
-        }
-
-        public Builder traceId(String traceId) {
-            logMessage.setTraceId(traceId);
-            return this;
-        }
-
-        public Builder spanId(String spanId) {
-            logMessage.setSpanId(spanId);
             return this;
         }
 

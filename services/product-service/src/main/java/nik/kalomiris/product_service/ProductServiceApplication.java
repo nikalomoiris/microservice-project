@@ -18,7 +18,6 @@ import org.springframework.context.annotation.ComponentScan;
 	 *
 	 * Observability hooks in the flow:
 	 * - structured logs via LogPublisher
-	 * - tracing via Micrometer Tracer
 	 */
 public class ProductServiceApplication {
 

@@ -27,7 +27,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import io.micrometer.tracing.Tracer;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceConfirmOrderTest {
@@ -45,14 +44,11 @@ class OrderServiceConfirmOrderTest {
     @Mock
     private nik.kalomiris.order_service.mapper.OrderMapper orderMapper;
 
-    @Mock
-    private Tracer tracer;
-
     private OrderService orderService;
 
     @BeforeEach
     void setUp() {
-        orderService = new OrderService(orderRepository, orderMapper, rabbitTemplate, logPublisher, tracer);
+        orderService = new OrderService(orderRepository, orderMapper, rabbitTemplate, logPublisher);
     }
 
     @Test

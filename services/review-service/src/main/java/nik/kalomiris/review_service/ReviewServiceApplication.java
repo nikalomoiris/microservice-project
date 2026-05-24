@@ -14,7 +14,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * Observability hooks in the flow:
  * - structured logs via LogPublisher
- * - tracing via Micrometer Tracer
  */
 public class ReviewServiceApplication {
 

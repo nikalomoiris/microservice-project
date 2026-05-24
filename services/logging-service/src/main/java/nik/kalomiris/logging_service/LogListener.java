@@ -21,11 +21,8 @@ public class LogListener {
     private final ObjectMapper objectMapper;
     private static final Logger log = LoggerFactory.getLogger(LogListener.class);
 
-    private final nik.kalomiris.logging_service.metrics.LoggingMetrics loggingMetrics;
-
-    public LogListener(nik.kalomiris.logging_service.metrics.LoggingMetrics loggingMetrics) {
+    public LogListener() {
         this.objectMapper = new ObjectMapper();
-        this.loggingMetrics = loggingMetrics;
     }
 
     @KafkaListener(topics = "service-logs", groupId = "logging-service-group")
@@ -34,35 +31,8 @@ public class LogListener {
             JsonNode json = objectMapper.readTree(message);
             String prettyJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
             log.info("[LOG] {}", prettyJson);
-            safeUpdateMetrics(json);
         } catch (Exception e) {
             log.info("[LOG] (raw) {}", message);
-            safeMarkIngest();
-        }
-    }
-
-    private void safeUpdateMetrics(JsonNode json) {
-        try {
-            loggingMetrics.markIngest();
-            JsonNode levelNode = json.get("level");
-            if (levelNode != null) {
-                String level = levelNode.asText("");
-                if ("ERROR".equalsIgnoreCase(level)) {
-                    loggingMetrics.markError();
-                } else if ("WARN".equalsIgnoreCase(level)) {
-                    loggingMetrics.markWarn();
-                }
-            }
-        } catch (Exception ignored) {
-            /* metrics best-effort */
-        }
-    }
-
-    private void safeMarkIngest() {
-        try {
-            loggingMetrics.markIngest();
-        } catch (Exception ignored) {
-            /* best-effort */
         }
     }
 }

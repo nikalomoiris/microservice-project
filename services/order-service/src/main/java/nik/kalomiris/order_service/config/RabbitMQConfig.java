@@ -78,7 +78,6 @@ public class RabbitMQConfig {
             MessageConverter messageConverter) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(messageConverter);
-        template.setObservationEnabled(true);
         return template;
     }
 }
