@@ -12,6 +12,9 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Declares payment-service RabbitMQ exchanges, queues, bindings, and message conversion.
+ */
 @Configuration
 public class RabbitMQConfig {
 

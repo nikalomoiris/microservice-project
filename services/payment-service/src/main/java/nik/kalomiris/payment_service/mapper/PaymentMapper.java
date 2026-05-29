@@ -4,6 +4,9 @@ import nik.kalomiris.payment_service.domain.Payment;
 import nik.kalomiris.payment_service.dto.PaymentRequest;
 import org.springframework.stereotype.Component;
 
+/**
+ * Maps payment API DTOs to domain entities.
+ */
 @Component
 public class PaymentMapper {
     public Payment toPayment(PaymentRequest paymentRequest) {

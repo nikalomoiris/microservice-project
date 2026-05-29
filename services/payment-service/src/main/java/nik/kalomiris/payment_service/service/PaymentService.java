@@ -22,6 +22,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.util.Optional;
 
+/**
+ * Core payment orchestration service for create, authorize, and event publication flows.
+ */
 @Service
 @Transactional
 public class PaymentService {

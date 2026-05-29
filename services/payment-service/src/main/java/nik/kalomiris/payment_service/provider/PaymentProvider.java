@@ -7,6 +7,9 @@ import nik.kalomiris.payment_service.provider.dto.ProviderCaptureResult;
 import nik.kalomiris.payment_service.provider.dto.ProviderRefundResult;
 import nik.kalomiris.payment_service.provider.dto.ProviderVoidResult;
 
+/**
+ * Abstraction for external payment authorization and settlement operations.
+ */
 public interface PaymentProvider {
     ProviderAuthResult authorize(Payment payment);
 

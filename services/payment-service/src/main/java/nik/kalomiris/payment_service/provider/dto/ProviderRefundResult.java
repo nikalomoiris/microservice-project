@@ -1,5 +1,8 @@
 package nik.kalomiris.payment_service.provider.dto;
 
+/**
+ * Result payload for provider refund attempts.
+ */
 public class ProviderRefundResult {
 
     private boolean success;
@@ -56,6 +59,9 @@ public class ProviderRefundResult {
         return new FailureBuilder();
     }
 
+    /**
+     * Builder for successful refund responses.
+     */
     public static class SuccessBuilder {
         private String refundId;
         private String message;
@@ -85,6 +91,9 @@ public class ProviderRefundResult {
         }
     }
 
+    /**
+     * Builder for failed refund responses.
+     */
     public static class FailureBuilder {
         private String errorCode;
         private String message;

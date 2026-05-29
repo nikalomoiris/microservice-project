@@ -1,5 +1,8 @@
 package nik.kalomiris.payment_service.provider.dto;
 
+/**
+ * Result payload for provider void attempts.
+ */
 public class ProviderVoidResult {
 
     private boolean success;
@@ -47,6 +50,9 @@ public class ProviderVoidResult {
         return new FailureBuilder();
     }
 
+    /**
+     * Builder for successful void responses.
+     */
     public static class SuccessBuilder {
         private String message;
 
@@ -66,6 +72,9 @@ public class ProviderVoidResult {
         }
     }
 
+    /**
+     * Builder for failed void responses.
+     */
     public static class FailureBuilder {
         private String errorCode;
         private String message;

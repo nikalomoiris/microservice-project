@@ -8,6 +8,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import nik.kalomiris.payment_service.domain.Payment;
 import org.springframework.stereotype.Component;
 
+/**
+ * Deterministic mock payment provider used for local and test flows.
+ */
 @ConditionalOnProperty(name = "payment.provider", havingValue = "mock")
 @Component
 public class MockPaymentProvider implements PaymentProvider {

@@ -1,5 +1,8 @@
 package nik.kalomiris.payment_service.domain;
 
+/**
+ * Lifecycle states for payment processing.
+ */
 public enum PaymentStatus {
 
     CREATED,
