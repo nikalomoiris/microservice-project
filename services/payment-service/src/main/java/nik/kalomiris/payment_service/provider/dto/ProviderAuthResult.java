@@ -1,5 +1,8 @@
 package nik.kalomiris.payment_service.provider.dto;
 
+/**
+ * Result payload for provider authorization attempts.
+ */
 public class ProviderAuthResult {
 
     private boolean success;
@@ -56,6 +59,9 @@ public class ProviderAuthResult {
         return new FailureBuilder();
     }
 
+    /**
+     * Builder for successful authorization responses.
+     */
     public static class SuccessBuilder {
         private String intentId;
         private String message;
@@ -85,6 +91,9 @@ public class ProviderAuthResult {
         }
     }
 
+    /**
+     * Builder for failed authorization responses.
+     */
     public static class FailureBuilder {
         private String errorCode;
         private String message;

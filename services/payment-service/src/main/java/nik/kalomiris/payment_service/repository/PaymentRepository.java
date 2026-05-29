@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import nik.kalomiris.payment_service.domain.Payment;
 import nik.kalomiris.payment_service.domain.PaymentStatus;
 
+/**
+ * Repository for querying and persisting payment aggregates.
+ */
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByOrderId(String orderId);

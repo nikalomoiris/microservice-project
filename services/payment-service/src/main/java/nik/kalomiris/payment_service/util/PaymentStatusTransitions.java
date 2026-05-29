@@ -3,6 +3,9 @@ package nik.kalomiris.payment_service.util;
 import nik.kalomiris.payment_service.domain.PaymentStatus;
 import org.springframework.stereotype.Component;
 
+/**
+ * Encapsulates allowed transitions between payment lifecycle states.
+ */
 @Component
 public class PaymentStatusTransitions {
 

@@ -10,6 +10,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.validation.constraints.*;
 import jakarta.persistence.*;
 
+/**
+ * Payment aggregate persisted by the payment service.
+ */
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "payments", indexes = {
@@ -150,6 +153,9 @@ public class Payment {
     }
 
     // Builder for easier object creation
+    /**
+     * Builder for constructing validated {@link Payment} instances.
+     */
     public static class Builder {
         private String orderId;
         private BigDecimal amount;

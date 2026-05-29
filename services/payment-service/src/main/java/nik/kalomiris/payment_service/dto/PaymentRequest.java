@@ -2,6 +2,9 @@ package nik.kalomiris.payment_service.dto;
 
 import java.math.BigDecimal;
 
+/**
+ * Request payload used to create a payment.
+ */
 public class PaymentRequest {
 
     private String orderId;

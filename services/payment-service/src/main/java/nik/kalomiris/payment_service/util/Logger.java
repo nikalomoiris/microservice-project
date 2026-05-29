@@ -7,6 +7,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+/**
+ * Publishes structured payment logs through the shared logging client.
+ */
 @Component
 public class Logger {
 

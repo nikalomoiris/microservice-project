@@ -1,5 +1,8 @@
 package nik.kalomiris.payment_service.provider.dto;
 
+/**
+ * Result payload for provider capture attempts.
+ */
 public class ProviderCaptureResult {
 
     private boolean success;
@@ -56,6 +59,9 @@ public class ProviderCaptureResult {
         return new FailureBuilder();
     }
 
+    /**
+     * Builder for successful capture responses.
+     */
     public static class SuccessBuilder {
         private String captureId;
         private String message;
@@ -85,6 +91,9 @@ public class ProviderCaptureResult {
         }
     }
 
+    /**
+     * Builder for failed capture responses.
+     */
     public static class FailureBuilder {
         private String errorCode;
         private String message;

@@ -17,6 +17,9 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Scheduled job that retries pending payment authorizations.
+ */
 @Component
 public class PaymentRecoveryJob {
 

@@ -11,6 +11,9 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.validation.annotation.Validated;
 
+/**
+ * Binds and applies retry settings for payment provider calls.
+ */
 @Configuration
 @ConfigurationProperties(prefix = "payment.retry")
 @Validated
