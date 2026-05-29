@@ -1,10 +1,12 @@
 package nik.kalomiris.payment_service.service;
 
 import nik.kalomiris.payment_service.provider.dto.FailureType;
+import nik.kalomiris.payment_service.PaymentServiceApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.retry.support.RetryTemplate;
 
 import java.util.Map;
@@ -83,5 +85,10 @@ class PaymentRetryConfigTest {
             throw new IllegalStateException("always fail");
         }));
         assertEquals(3, attempts.get());
+    }
+
+    @Test
+    void applicationEnablesScheduling() {
+        assertTrue(PaymentServiceApplication.class.isAnnotationPresent(EnableScheduling.class));
     }
 }
